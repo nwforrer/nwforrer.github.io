@@ -20,5 +20,15 @@
       <description>Testing the site</description>
     </item>
     
+    <item>
+      <title>Roguelike tutorial for Common Lisp - Part 0</title>
+      <link>https://nwforrer.github.io/posts/roguelike-tutorial-part0/</link>
+      <pubDate>Sun, 23 Jun 2019 00:00:00 -0400</pubDate>
+      
+      <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part0/</guid>
+      <description>This set of tutorials is going to follow the Python TCOD tutorial, but will be written in Common Lisp and use the BearLibTerminal library.
+Prior Knowledge This tutorial assumes you are familiar with programming in Common Lisp. If you&amp;rsquo;re not familiar, I would highly recommend checking out A Road to Common Lisp on Steve Losh&amp;rsquo;s blog. It provides many valuable resources to get up to speed with Common Lisp, and is how I got started.</description>
+    </item>
+    
   </channel>
 </rss>

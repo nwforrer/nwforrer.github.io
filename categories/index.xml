@@ -6,9 +6,19 @@
     <description>Recent content in Categories on nick forrer</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
+    <lastBuildDate>Sun, 23 Jun 2019 00:00:00 -0400</lastBuildDate>
     
 	<atom:link href="https://nwforrer.github.io/categories/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>tutorials</title>
+      <link>https://nwforrer.github.io/categories/tutorials/</link>
+      <pubDate>Sun, 23 Jun 2019 00:00:00 -0400</pubDate>
+      
+      <guid>https://nwforrer.github.io/categories/tutorials/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+
+<title>Roguelike tutorial for Common Lisp - Part 0 | nick forrer</title>
+
+<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
+integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+
+
+
+
+
+
+
+<div class="container">
+    <nav class="navbar level">
+      <div class="navbar-brand">
+          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
+      </div>           
+      <div class="navbar-menu has-text-centered is-active">
+          <div class="navbar-end is-centered">
+              
+           </div>
+      </div>
+    </nav>
+  </div>
+
+<div class="container">
+  <h2 class="subtitle is-6">June 23, 2019</h2>
+  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 0</h1>
+  <div class="content">
+    
+
+<p>This set of tutorials is going to follow the <a href="http://rogueliketutorials.com/tutorials/tcod/">Python TCOD tutorial</a>, but will be
+written in Common Lisp and use the BearLibTerminal library.</p>
+
+<h2 id="prior-knowledge">Prior Knowledge</h2>
+
+<p>This tutorial assumes you are familiar with programming in Common Lisp. If
+you&rsquo;re not familiar, I would highly recommend checking out <a href="http://stevelosh.com/blog/2018/08/a-road-to-common-lisp/">A Road to Common Lisp</a>
+on Steve Losh&rsquo;s blog. It provides many valuable resources to get up to speed
+with Common Lisp, and is how I got started.</p>
+
+<h2 id="installation">Installation</h2>
+
+<p>You will need the following installed:</p>
+
+<ul>
+<li>A Common Lisp implementation. I will be using and testing my code against
+<a href="http://www.sbcl.org/">SBCL</a>.</li>
+<li><a href="https://www.quicklisp.org/beta/">Quicklisp</a></li>
+<li>An editor. I use Emacs, with the <a href="https://github.com/hlissner/doom-emacs">Doom Emacs</a> configuration.</li>
+</ul>
+
+<p>I run Linux (Fedora) on my machine, and SBCL is available in the default
+repositories. If it is not available in your distro (or if you&rsquo;re not running
+Linux), check out the <a href="http://www.sbcl.org/getting.html">getting started</a> page.</p>
+
+<p>Quicklisp should be configured based on the installation guide on their <a href="https://www.quicklisp.org/beta/">home page</a>.</p>
+
+<p>For the Emacs configuration, the most important peice is to have a REPL
+available. I use the <a href="https://github.com/joaotavora/sly">sly</a> package, although <a href="https://common-lisp.net/project/slime/">SLIME</a> is popular as well. Having a
+REPL running in your editor makes the development process much more efficient
+and enjoyable.</p>
+
+<h2 id="project-setup">Project setup</h2>
+
+<p>Once you have everything installed that you need, you can get the your project
+skeleton created, with the needed dependencies. Since you have Quicklisp
+installed, it will be easy to generate a project skeleton using <a href="https://www.xach.com/lisp/quickproject/">Quickproject</a>.</p>
+
+<p>First, open emacs and start your REPL (if you&rsquo;re using sly, the Emacs command is
+just M-x &ldquo;sly&rdquo;). In the REPL:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(ql:quickload <span style="color:#e6db74">:quickproject</span>)
+(quickproject:make-project <span style="color:#ae81ff">#p&#34;cl-rltut&#34;</span> <span style="color:#e6db74">:depends-on</span> <span style="color:#f92672">&#39;</span>(<span style="color:#e6db74">:cl-blt</span>))</code></pre></div>
+<p>That should create a &ldquo;cl-rltut&rdquo; directory within the current working
+directory of your REPL (this can be shown for sly with the &ldquo;sly-pwd&rdquo; command,
+and changed with the &ldquo;sly-cd&rdquo; command). Within the project directory, you should
+see an ASDF file named &ldquo;cl-rltut.asd&rdquo;, which looks like the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(asdf:defsystem <span style="color:#e6db74">#:cl-rltut</span>
+  <span style="color:#e6db74">:description</span> <span style="color:#e6db74">&#34;Describe cl-rltut here&#34;</span>
+  <span style="color:#e6db74">:author</span> <span style="color:#e6db74">&#34;Nick Forrer&#34;</span>
+  <span style="color:#e6db74">:license</span>  <span style="color:#e6db74">&#34;MIT&#34;</span>
+  <span style="color:#e6db74">:version</span> <span style="color:#e6db74">&#34;0.0.1&#34;</span>
+  <span style="color:#e6db74">:serial</span> <span style="color:#66d9ef">t</span>
+  <span style="color:#e6db74">:depends-on</span> (<span style="color:#e6db74">#:cl-blt</span>)
+  <span style="color:#e6db74">:components</span> ((<span style="color:#e6db74">:file</span> <span style="color:#e6db74">&#34;package&#34;</span>)
+               (<span style="color:#e6db74">:file</span> <span style="color:#e6db74">&#34;cl-rltut&#34;</span>)))</code></pre></div>
+<p>You will also need to download the cl-blt package, which contains the
+Common Lisp bindings for BearLibTerminal. The reason for this is because
+cl-blt is not currently available in an online repository that
+Quicklisp could download it automatically. Download the package using:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">git clone https://github.com/sjl/cl-blt.git ~/quicklisp/local-projects/cl-blt</code></pre></div>
+<p>That will clone the cl-blt Git repo into a directory that Quicklisp will look at
+when trying to load an ASDF system.</p>
+
+<p>In addition to the Common Lisp bindings, you will also need the BearLibTerminal
+library itself. Download the appropriate binary for your system from
+<a href="http://foo.wyrd.name/en:bearlibterminal#download">http://foo.wyrd.name/en:bearlibterminal#download</a>. Once downloaded, extract the
+archive and find the shared library dependency. For the Linux archive, this will
+be Linux64/libBearLibTerminal.so (assuming you are using a 64-bit OS). This file
+should be placed in a &ldquo;lib&rdquo; directory in the root of your project.</p>
+
+<p>With all of that in place, you should now be able to load your projects system
+in the REPL to ensure in can find all the dependencies with:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(ql:quickload <span style="color:#e6db74">:cl-rltut</span>)</code></pre></div>
+<p>Assuming you don&rsquo;t see any errors, then your project is all set to continue with
+the tutorial! To see what the project should look like at this point, you can
+find the current state for Part 0 here: <a href="https://github.com/nwforrer/cl-rltut/tree/part-0">https://github.com/nwforrer/cl-rltut/tree/part-0</a>.</p>
+
+<h2 id="questions-and-feedback">Questions and Feedback</h2>
+
+<p>If you run into any issues, or have some feedback, feel free to email me at:
+nwforrer AT gmail.com.</p>
+
+  </div>
+</div>
+<div class="container has-text-centered">
+    
+</div>
+
+<div class="container has-text-centered">
+  
+</div>
+<section class="section">
+  <div class="container has-text-centered">
+    <p></p>
+  </div>
+</section>
+
+
