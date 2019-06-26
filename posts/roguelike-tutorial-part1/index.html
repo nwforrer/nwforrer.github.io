@@ -198,12 +198,14 @@ update it when an arrow key is pressed. Make updates to the following functions:
           <span style="color:#f1fa8c">:and</span> <span style="color:#8be9fd;font-style:italic">player-y</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
           <span style="color:#f1fa8c">:do</span>
              (<span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">player-x</span> <span style="color:#8be9fd;font-style:italic">player-y</span>)
-             (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>)))
-               (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)
+             (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
+                    (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
+                    (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
+               (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">exit</span>
                    (<span style="color:#8be9fd;font-style:italic">return</span>))
-               (<span style="color:#8be9fd;font-style:italic">when</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>)
-                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-x</span> (<span style="color:#8be9fd;font-style:italic">car</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>)))
-                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-y</span> (<span style="color:#8be9fd;font-style:italic">cdr</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))))))))</code></pre></div>
+               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
+                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-x</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>))
+                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-y</span> (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))))))</code></pre></div>
 <p>If you run the game now, you should be able to move the player around using the
 arrow keys.</p>
 
