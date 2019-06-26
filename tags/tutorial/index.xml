@@ -6,15 +6,26 @@
     <description>Recent content in tutorial on nick forrer</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 23 Jun 2019 00:00:00 -0400</lastBuildDate>
+    <lastBuildDate>Tue, 25 Jun 2019 20:10:00 -0400</lastBuildDate>
     
 	<atom:link href="https://nwforrer.github.io/tags/tutorial/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
-      <title>Roguelike tutorial for Common Lisp - Part 0</title>
+      <title>Roguelike tutorial for Common Lisp - Part 1 - Drawing the player</title>
+      <link>https://nwforrer.github.io/posts/roguelike-tutorial-part1/</link>
+      <pubDate>Tue, 25 Jun 2019 20:10:00 -0400</pubDate>
+      
+      <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part1/</guid>
+      <description>Welcome to the first part of the tutorial! If you haven&amp;rsquo;t already, please check out Part 0 to get the project created.
+This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 1 of that tutorial as closely as possible, with the exception of different structure to support more idiomatic Common Lisp, and with using BearLibTerminal instead of tcod.
+Opening a window First we&amp;rsquo;ll work on getting a window created.</description>
+    </item>
+    
+    <item>
+      <title>Roguelike tutorial for Common Lisp - Part 0 - Setup</title>
       <link>https://nwforrer.github.io/posts/roguelike-tutorial-part0/</link>
-      <pubDate>Sun, 23 Jun 2019 00:00:00 -0400</pubDate>
+      <pubDate>Sun, 23 Jun 2019 10:24:00 -0400</pubDate>
       
       <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part0/</guid>
       <description>This set of tutorials is going to follow the Python TCOD tutorial, but will be written in Common Lisp and use the BearLibTerminal library.

@@ -6,7 +6,7 @@
 
 
 
-<title>Roguelike tutorial for Common Lisp - Part 0 | nick forrer</title>
+<title>Roguelike tutorial for Common Lisp - Part 0 - Setup | nick forrer</title>
 
 <link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
 
@@ -34,6 +34,12 @@ integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbi
                   </span>
                 </a>
               
+                <a href="https://nwforrer.github.io/index.xml" rel="me">
+                  <span class="icon">
+                    <i class="fas fa-rss"></i>
+                  </span>
+                </a>
+              
            </div>
       </div>
     </nav>
@@ -41,7 +47,7 @@ integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbi
 
 <div class="container">
   <h2 class="subtitle is-6">June 23, 2019</h2>
-  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 0</h1>
+  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 0 - Setup</h1>
   <div class="content">
     
 
@@ -85,26 +91,26 @@ installed, it will be easy to generate a project skeleton using <a href="https:/
 
 <p>First, open emacs and start your REPL (if you&rsquo;re using sly, the Emacs command is
 just M-x &ldquo;sly&rdquo;). In the REPL:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(ql:quickload <span style="color:#e6db74">:quickproject</span>)
-(quickproject:make-project <span style="color:#ae81ff">#p&#34;cl-rltut&#34;</span> <span style="color:#e6db74">:depends-on</span> <span style="color:#f92672">&#39;</span>(<span style="color:#e6db74">:cl-blt</span>))</code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">ql:quickload</span> <span style="color:#f1fa8c">:quickproject</span>)
+(<span style="color:#8be9fd;font-style:italic">quickproject:make-project</span> #p&#34;cl-rltut&#34; <span style="color:#f1fa8c">:depends-on</span> <span style="color:#ff79c6">&#39;</span>(<span style="color:#f1fa8c">:cl-blt</span>))</code></pre></div>
 <p>That should create a &ldquo;cl-rltut&rdquo; directory within the current working
 directory of your REPL (this can be shown for sly with the &ldquo;sly-pwd&rdquo; command,
 and changed with the &ldquo;sly-cd&rdquo; command). Within the project directory, you should
 see an ASDF file named &ldquo;cl-rltut.asd&rdquo;, which looks like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(asdf:defsystem <span style="color:#e6db74">#:cl-rltut</span>
-  <span style="color:#e6db74">:description</span> <span style="color:#e6db74">&#34;Describe cl-rltut here&#34;</span>
-  <span style="color:#e6db74">:author</span> <span style="color:#e6db74">&#34;Nick Forrer&#34;</span>
-  <span style="color:#e6db74">:license</span>  <span style="color:#e6db74">&#34;MIT&#34;</span>
-  <span style="color:#e6db74">:version</span> <span style="color:#e6db74">&#34;0.0.1&#34;</span>
-  <span style="color:#e6db74">:serial</span> <span style="color:#66d9ef">t</span>
-  <span style="color:#e6db74">:depends-on</span> (<span style="color:#e6db74">#:cl-blt</span>)
-  <span style="color:#e6db74">:components</span> ((<span style="color:#e6db74">:file</span> <span style="color:#e6db74">&#34;package&#34;</span>)
-               (<span style="color:#e6db74">:file</span> <span style="color:#e6db74">&#34;cl-rltut&#34;</span>)))</code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">asdf:defsystem</span> <span style="color:#f1fa8c">#:cl-rltut</span>
+  <span style="color:#f1fa8c">:description</span> <span style="color:#f1fa8c">&#34;Describe cl-rltut here&#34;</span>
+  <span style="color:#f1fa8c">:author</span> <span style="color:#f1fa8c">&#34;Nick Forrer&#34;</span>
+  <span style="color:#f1fa8c">:license</span>  <span style="color:#f1fa8c">&#34;MIT&#34;</span>
+  <span style="color:#f1fa8c">:version</span> <span style="color:#f1fa8c">&#34;0.0.1&#34;</span>
+  <span style="color:#f1fa8c">:serial</span> t
+  <span style="color:#f1fa8c">:depends-on</span> (<span style="color:#f1fa8c">#:cl-blt</span>)
+  <span style="color:#f1fa8c">:components</span> ((<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;package&#34;</span>)
+               (<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;cl-rltut&#34;</span>)))</code></pre></div>
 <p>You will also need to download the cl-blt package, which contains the
 Common Lisp bindings for BearLibTerminal. The reason for this is because
 cl-blt is not currently available in an online repository that
 Quicklisp could download it automatically. Download the package using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">git clone https://github.com/sjl/cl-blt.git ~/quicklisp/local-projects/cl-blt</code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">git clone https://github.com/sjl/cl-blt.git ~/quicklisp/local-projects/cl-blt</code></pre></div>
 <p>That will clone the cl-blt Git repo into a directory that Quicklisp will look at
 when trying to load an ASDF system.</p>
 
@@ -115,9 +121,13 @@ archive and find the shared library dependency. For the Linux archive, this will
 be Linux64/libBearLibTerminal.so (assuming you are using a 64-bit OS). This file
 should be placed in a &ldquo;lib&rdquo; directory in the root of your project.</p>
 
+<p>To make it easier to load your project from the REPL, you can create a symlink
+in the local-projects directly that points to your project, so that Quicklisp
+can always find it (use the correct path to your project instead of ~/src/lisp/cl-rltut):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">ln -s ~/src/lisp/cl-rltut ~/quicklisp/local-projects</code></pre></div>
 <p>With all of that in place, you should now be able to load your projects system
 in the REPL to ensure in can find all the dependencies with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(ql:quickload <span style="color:#e6db74">:cl-rltut</span>)</code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">ql:quickload</span> <span style="color:#f1fa8c">:cl-rltut</span>)</code></pre></div>
 <p>Assuming you don&rsquo;t see any errors, then your project is all set to continue with
 the tutorial! To see what the project should look like at this point, you can
 find the current state for Part 0 here: <a href="https://github.com/nwforrer/cl-rltut/tree/part-0">https://github.com/nwforrer/cl-rltut/tree/part-0</a>.</p>
@@ -126,6 +136,8 @@ find the current state for Part 0 here: <a href="https://github.com/nwforrer/cl-
 
 <p>If you run into any issues, or have some feedback, feel free to email me at:
 nwforrer AT gmail.com.</p>
+
+<p>Continue to the <a href="/posts/roguelike-tutorial-part1">next tutorial</a>.</p>
 
   </div>
 </div>
