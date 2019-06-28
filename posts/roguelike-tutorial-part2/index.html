@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+
+<title>Roguelike tutorial for Common Lisp - Part 2 - Generic entity and map | nick forrer</title>
+
+<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
+integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+
+
+
+
+
+
+
+<div class="container">
+    <nav class="navbar level">
+      <div class="navbar-brand">
+          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
+      </div>           
+      <div class="navbar-menu has-text-centered is-active">
+          <div class="navbar-end is-centered">
+              
+                <a href="https://github.com/nwforrer" rel="me">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                </a>
+              
+                <a href="https://nwforrer.github.io/index.xml" rel="me">
+                  <span class="icon">
+                    <i class="fas fa-rss"></i>
+                  </span>
+                </a>
+              
+           </div>
+      </div>
+    </nav>
+  </div>
+
+<div class="container">
+  <h2 class="subtitle is-6">June 27, 2019</h2>
+  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 2 - Generic entity and map</h1>
+  <div class="content">
+    
+
+<p>This tutorial series is based on the <a href="http://rogueliketutorials.com">Python Roguelike Tutorial</a>. This will be
+covering <a href="http://rogueliketutorials.com/tutorials/tcod/part-2/">Part 2</a> of that tutorial.</p>
+
+<p>It&rsquo;s time to start thinking about how we want to structure our entities, and
+what the map will look like. We will be creating a generic entity class that all
+entities in the game will use, and introduce the concept of how the map will be
+structured. We&rsquo;ll be using classes and generic methods provided with CLOS here.
+If you&rsquo;re unfamiliar with CLOS, there is a good overview in <a href="https://lispcookbook.github.io/cl-cookbook/clos.html">The Common Lisp Cookbook</a>.</p>
+
+<h2 id="generic-entity">Generic entity</h2>
+
+<p>The first thing we&rsquo;ll be doing is creating a class to represent entities in the
+game, storing it&rsquo;s position, color, and character to render.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">entity</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:x</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/x</span>)
+   (<span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:y</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/y</span>)
+   (<span style="color:#8be9fd;font-style:italic">char</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/char</span>)
+   (<span style="color:#8be9fd;font-style:italic">color</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:color</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/color</span>)))</code></pre></div>
+<p>Next we can create some methods on that class to handle drawing and moving the
+entity.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">move</span> ((<span style="color:#8be9fd;font-style:italic">e</span> <span style="color:#8be9fd;font-style:italic">entity</span>) <span style="color:#8be9fd;font-style:italic">dx</span> <span style="color:#8be9fd;font-style:italic">dy</span>)
+  (<span style="color:#8be9fd;font-style:italic">incf</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">e</span>) <span style="color:#8be9fd;font-style:italic">dx</span>)
+  (<span style="color:#8be9fd;font-style:italic">incf</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">e</span>) <span style="color:#8be9fd;font-style:italic">dy</span>))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">draw</span> ((<span style="color:#8be9fd;font-style:italic">e</span> <span style="color:#8be9fd;font-style:italic">entity</span>))
+  (<span style="color:#8be9fd;font-style:italic">with-slots</span> (<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">char</span> <span style="color:#8be9fd;font-style:italic">color</span>) <span style="color:#8be9fd;font-style:italic">e</span>
+    (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:color</span>) <span style="color:#8be9fd;font-style:italic">color</span>
+          (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) <span style="color:#8be9fd;font-style:italic">char</span>)))</code></pre></div>
+<p>We&rsquo;ll rename our old draw function to render-all, and from there call the entities draw
+method for each entity.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">render-all</span> (<span style="color:#8be9fd;font-style:italic">entities</span>)
+  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
+  (<span style="color:#8be9fd;font-style:italic">mapc</span> <span style="color:#50fa7b">#&#39;</span><span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
+  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<p>We&rsquo;re just mapping the draw method call over the list of all entities passed
+into the function.</p>
+
+<p>Now we actually need to create some entities. Update the main function as
+follows:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">main</span>()
+  (<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span>
+    (<span style="color:#8be9fd;font-style:italic">config</span>)
+    (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:with</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                                        <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>)
+                                        <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                                        <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                                        <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:white</span>))
+          <span style="color:#f1fa8c">:and</span> <span style="color:#8be9fd;font-style:italic">npc</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                                    <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">-</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>) <span style="color:#bd93f9">5</span>)
+                                    <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                                    <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                                    <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:yellow</span>))
+          <span style="color:#f1fa8c">:with</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">npc</span>)
+          <span style="color:#f1fa8c">:do</span>
+             (<span style="color:#8be9fd;font-style:italic">render-all</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
+             (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
+                    (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
+                    (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
+               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">exit</span>
+                 (<span style="color:#8be9fd;font-style:italic">return</span>))
+               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
+                 (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))))))</code></pre></div>
+<p>Here we removed the player-x and player-y variables, and instead create a player
+entity. We have also added an npc entity to show how we can use the entity class
+for more than just the player. We add those two entities to an entities list,
+which gets passed to the render-all function. We also call the new move method
+on the player entity when a move action is requested.</p>
+
+<p>If you run the game now, it should look like the following:
+<img src="/cl-rltut/generic-entity-class.png" alt="" /></p>
+
+<p>The NPC should look like a yellow @ symbol, and player movement should work like it
+did before.</p>
+
+<h2 id="creating-the-map">Creating the map</h2>
+
+<p>Now that we can create and render entities, we should create a map for them to
+move around in. We&rsquo;re not going to procedurally generate the map yet (that will
+be in the next tutorial), but we&rsquo;ll create the structure needed to render the
+map.</p>
+
+<p>Before we do, let&rsquo;s create a new file to store the map related code, as it can
+become pretty large once we&rsquo;re generating it. Create a file named
+&ldquo;game-map.lisp&rdquo; in the root of your project, and declare that it&rsquo;s in the same
+package by placing this at the top of the file:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">in-package</span> <span style="color:#f1fa8c">#:cl-rltut</span>)</code></pre></div>
+<p>You also need to update the ASDF file to include the new file in your system:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">asdf:defsystem</span> <span style="color:#f1fa8c">#:cl-rltut</span>
+  <span style="color:#f1fa8c">:description</span> <span style="color:#f1fa8c">&#34;Describe cl-rltut here&#34;</span>
+  <span style="color:#f1fa8c">:author</span> <span style="color:#f1fa8c">&#34;Nick Forrer&#34;</span>
+  <span style="color:#f1fa8c">:license</span> <span style="color:#f1fa8c">&#34;MIT&#34;</span>
+  <span style="color:#f1fa8c">:version</span> <span style="color:#f1fa8c">&#34;0.0.1&#34;</span>
+  <span style="color:#f1fa8c">:serial</span> t
+  <span style="color:#f1fa8c">:depends-on</span> (<span style="color:#f1fa8c">#:cl-blt</span>)
+  <span style="color:#f1fa8c">:components</span> ((<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;package&#34;</span>)
+               (<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;cl-rltut&#34;</span>)
+               (<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;game-map&#34;</span>)))</code></pre></div>
+<p>In the &ldquo;game-map.lisp&rdquo; file, create a new tile class.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">tile</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">blocked</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:blocked</span>
+            <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/blocked</span>
+            <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">block-sight</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:block-sight</span>
+                <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/block-sight</span>
+                <span style="color:#f1fa8c">:initform</span> nil)))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-instance</span> <span style="color:#f1fa8c">:after</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#8be9fd;font-style:italic">tile</span>) <span style="color:#8be9fd;font-style:italic">&amp;rest</span> <span style="color:#8be9fd;font-style:italic">initargs</span>)
+  (<span style="color:#8be9fd;font-style:italic">declare</span> (<span style="color:#8be9fd;font-style:italic">ignore</span> <span style="color:#8be9fd;font-style:italic">initargs</span>))
+  (<span style="color:#8be9fd;font-style:italic">with-slots</span> (<span style="color:#8be9fd;font-style:italic">blocked</span> <span style="color:#8be9fd;font-style:italic">block-sight</span>) <span style="color:#8be9fd;font-style:italic">tile</span>
+    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> <span style="color:#8be9fd;font-style:italic">block-sight</span>)
+        (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">block-sight</span> <span style="color:#8be9fd;font-style:italic">blocked</span>))))</code></pre></div>
+<p>The blocked slot will indicate whether this tile will block movement, such as if
+it represents a wall. The block-sight slot will indicate if this tile will block
+an entities vision. These are separate so that we can support things like lava
+tiles, where we don&rsquo;t want an entity to walk through it, but they can see past
+it. We will implement field-of-vision later, but that will determine which tiles
+the player can see at a given time.
+We&rsquo;ve also defined an after method for initialize-instance for the tile class.
+This will be called after a make-instance is called for the class, and the slots
+are initialized. Here, we want to make sure the block-sight slot is set to true
+if blocked is also true.</p>
+
+<p>Now lets create a game-map class, which will hold a 2D array of tiles to make up
+our map.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">game-map</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">width</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:w</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">game-map/w</span>)
+   (<span style="color:#8be9fd;font-style:italic">height</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:h</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">game-map/h</span>)
+   (<span style="color:#8be9fd;font-style:italic">tiles</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">game-map/tiles</span>)))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-instance</span> <span style="color:#f1fa8c">:after</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">&amp;rest</span> <span style="color:#8be9fd;font-style:italic">initargs</span>)
+  (<span style="color:#8be9fd;font-style:italic">declare</span> (<span style="color:#8be9fd;font-style:italic">ignore</span> <span style="color:#8be9fd;font-style:italic">initargs</span>))
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) (<span style="color:#8be9fd;font-style:italic">make-array</span> (<span style="color:#8be9fd;font-style:italic">list</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>) (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>)))))</code></pre></div>
+<p>We also define an initialize-instance method for game-map. This initializes the
+tiles slot to an array with WxH dimensions.</p>
+
+<p>Next create a function to initialize the tiles in the array.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">initialize-tiles</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+      (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;tile</span>))))
+
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/blocked</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">30</span> <span style="color:#bd93f9">22</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">30</span> <span style="color:#bd93f9">22</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/blocked</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">31</span> <span style="color:#bd93f9">22</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">31</span> <span style="color:#bd93f9">22</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/blocked</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">32</span> <span style="color:#bd93f9">22</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#bd93f9">32</span> <span style="color:#bd93f9">22</span>)) t))</code></pre></div>
+<p>This loops through all the tiles in the map, and initializes them to a new
+instance of the tile class. This will create all the tiles with blocked and
+block-sight set to nil. We then set 3 of the tiles to have blocked and
+block-sight set to true so we can test it.</p>
+
+<p>We now have a map created, but we can&rsquo;t see it yet. Back in the &ldquo;cl-rltut.lisp&rdquo;
+file, update the render-all function to take the map as a parameter and render
+all it&rsquo;s tiles.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:dark-wall</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">100</span>)
+                                <span style="color:#f1fa8c">:dark-ground</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">50</span> <span style="color:#bd93f9">50</span> <span style="color:#bd93f9">150</span>)))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">render-all</span> (<span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+      (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>))
+             (<span style="color:#8be9fd;font-style:italic">wall</span> (<span style="color:#8be9fd;font-style:italic">tile/blocked</span> <span style="color:#8be9fd;font-style:italic">tile</span>)))
+        (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">wall</span>
+            (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-wall</span>))
+            (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-ground</span>))))
+      (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) <span style="color:#f1fa8c">#\Space</span>)))
+
+  (<span style="color:#8be9fd;font-style:italic">mapc</span> <span style="color:#50fa7b">#&#39;</span><span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
+
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">blt:black</span>))
+  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<p>We first declare a color-map global variable as a property list to hold a
+mapping of keys (like &ldquo;dark-wall&rdquo;) to their BearLibTerminal color value. This
+just makes it easier to reference colors, and easy to update them later if we
+wanted to. Then, in the render-all method, we loop over all of the tiles in the
+map. We check if the blocked slot is true, and if so, set blt:background-color
+to dark-wall. Whenever you set the background-color, all subsequent draw calls
+will use it as the background in the cell you draw to. If the tile is not
+blocked, we set background-color to dark-ground. We then draw an empty space at
+the tiles cell, which will just populate the background of the cell.
+After the entire map and all entities are drawn, we reset the background-color
+to black.</p>
+
+<p>Now in the main function, lets create a map instance and pass it to the
+render-all function to actually see it displayed.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span> <span style="color:#bd93f9">80</span>)
+(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span> <span style="color:#bd93f9">45</span>)
+
+(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*map*</span> nil)
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">main</span> ()
+  (<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span>
+    (<span style="color:#8be9fd;font-style:italic">config</span>)
+    (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">*map*</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;game-map</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span>))
+    (<span style="color:#8be9fd;font-style:italic">initialize-tiles</span> <span style="color:#8be9fd;font-style:italic">*map*</span>)
+    (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:with</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                                        <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>)
+                                        <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                                        <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                                        <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:white</span>))
+          <span style="color:#f1fa8c">:and</span> <span style="color:#8be9fd;font-style:italic">npc</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                                    <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">-</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>) <span style="color:#bd93f9">5</span>)
+                                    <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                                    <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                                    <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:yellow</span>))
+          <span style="color:#f1fa8c">:with</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">npc</span>)
+          <span style="color:#f1fa8c">:do</span>
+             (<span style="color:#8be9fd;font-style:italic">render-all</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">*map*</span>)
+             (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
+                    (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
+                    (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
+               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">exit</span>
+                 (<span style="color:#8be9fd;font-style:italic">return</span>))
+               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
+                 (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))))))</code></pre></div>
+<p>We create two global variables to hold the map width and height (in cells). The
+height is set to 5 cells smaller than the height of the window. This is so that
+there is some blank space at the bottom of the window to be used for messages,
+which we&rsquo;ll get to in a later tutorial. We also declare the map variable as a
+global. This isn&rsquo;t really necessary, and could easily be created as a local
+variable in the main function. The reason I&rsquo;ve declared it global is so that it
+can be looked at and manipulated in the REPL. It&rsquo;s up to you whether you find
+that useful enough to make the variable global.
+The changes to the main method are straight forward. We initialize an instance
+of the game-map class, and initialize it&rsquo;s tiles. Then we just pass it along to
+the render-all method to have it displayed.</p>
+
+<p>If you run the game now, it should look like this:
+<img src="/cl-rltut/initial-map-render.png" alt="" /></p>
+
+<p>The three dark tiles are the walls. You&rsquo;ll notice that you can still walk
+through them, which isn&rsquo;t correct. We can easily fix that by first adding a
+helper method in the &ldquo;game-map-lisp&rdquo; file:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">blocked-p</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+  (<span style="color:#8be9fd;font-style:italic">tile/blocked</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)))</code></pre></div>
+<p>This takes in the map and an x,y coordinate, and returns whether that tile is
+blocked.</p>
+
+<p>We then just need to call that with the coordinates we&rsquo;re moving to, and if it&rsquo;s
+blocked, don&rsquo;t move the player. Update the `(when move)` block in the main
+function like:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
+  (<span style="color:#8be9fd;font-style:italic">unless</span> (<span style="color:#8be9fd;font-style:italic">blocked-p</span> <span style="color:#8be9fd;font-style:italic">*map*</span>
+                     (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>))
+                     (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))
+    (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))))</code></pre></div>
+<p>Now if you run the game, it should block you from walking through the walls!</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>That&rsquo;s all for this tutorial. Next we&rsquo;ll be working on procedurally generating
+the dungeon map!</p>
+
+<p>You can find the current state of the code on <a href="https://github.com/nwforrer/cl-rltut/tree/part-2">Github</a>. The list of changes since
+the previous tutorial can be found at
+<a href="https://github.com/nwforrer/cl-rltut/compare/part-1...part-2">https://github.com/nwforrer/cl-rltut/compare/part-1...part-2</a>.</p>
+
+  </div>
+</div>
+<div class="container has-text-centered">
+    
+</div>
+
+<div class="container has-text-centered">
+  
+</div>
+<section class="section">
+  <div class="container has-text-centered">
+    <p></p>
+  </div>
+</section>
+
+
