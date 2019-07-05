@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+
+<title>Roguelike tutorial for Common Lisp - Part 3 - Generating a dungeon | nick forrer</title>
+
+<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
+integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+
+
+
+
+
+
+
+<div class="container">
+    <nav class="navbar level">
+      <div class="navbar-brand">
+          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
+      </div>           
+      <div class="navbar-menu has-text-centered is-active">
+          <div class="navbar-end is-centered">
+              
+                <a href="https://github.com/nwforrer" rel="me">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                </a>
+              
+                <a href="https://nwforrer.github.io/index.xml" rel="me">
+                  <span class="icon">
+                    <i class="fas fa-rss"></i>
+                  </span>
+                </a>
+              
+           </div>
+      </div>
+    </nav>
+  </div>
+
+<div class="container">
+  <h2 class="subtitle is-6">July 5, 2019</h2>
+  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 3 - Generating a dungeon</h1>
+  <div class="content">
+    
+
+<p>This tutorial series is based on the <a href="http://rogueliketutorials.com">Python Roguelike Tutorial</a>. This will be
+covering <a href="http://rogueliketutorials.com/tutorials/tcod/part-3/">Part 3</a> of that tutorial.</p>
+
+<p>In this post, we&rsquo;ll be procedurally generating the dungeon! We will generate
+randomly sized rooms, and connect them with tunnels for the player and npcs to
+walk around.</p>
+
+<h2 id="looping-over-tiles">Looping over tiles</h2>
+
+<p>First things first, we&rsquo;re going to set all tiles to blocked by default.
+Previously, we had all tiles set as floors, and placed a couple of walls to
+test. Most dungeon generation algorithms work in the opposite way. They first
+block all tiles, and then procedurally carve out rooms and corridors.</p>
+
+<p>Update the initialize-tiles method to match the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-tiles</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>))
+      (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;tile</span> <span style="color:#f1fa8c">:blocked</span> t)))))</code></pre></div>
+<p>Looping over tiles like this is going to be something that happens a few times.
+To make this easier, we can define a macro that will loop over all tiles (or a
+subsection of tiles), and assign the current tile to a variable for us to use.
+The macro looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmacro</span> <span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile-val</span> <span style="color:#8be9fd;font-style:italic">&amp;key</span> (<span style="color:#8be9fd;font-style:italic">row-val</span> (<span style="color:#8be9fd;font-style:italic">gensym</span>)) (<span style="color:#8be9fd;font-style:italic">col-val</span> (<span style="color:#8be9fd;font-style:italic">gensym</span>)) (<span style="color:#8be9fd;font-style:italic">x-start</span> <span style="color:#bd93f9">0</span>) (<span style="color:#8be9fd;font-style:italic">y-start</span> <span style="color:#bd93f9">0</span>) (<span style="color:#8be9fd;font-style:italic">x-end</span> nil) (<span style="color:#8be9fd;font-style:italic">y-end</span> nil)) <span style="color:#8be9fd;font-style:italic">&amp;body</span> <span style="color:#8be9fd;font-style:italic">body</span>)
+  <span style="color:#ff79c6">`</span>(<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:for</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">col-val</span> <span style="color:#f1fa8c">:from</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">x-start</span> <span style="color:#f1fa8c">:below</span> (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">x-end</span>) (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">x-end</span>)
+         <span style="color:#f1fa8c">:do</span>
+            (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:for</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">row-val</span> <span style="color:#f1fa8c">:from</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">y-start</span> <span style="color:#f1fa8c">:below</span> (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">y-end</span>) (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">y-end</span>)
+                  <span style="color:#f1fa8c">:do</span>
+                     (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">tile-val</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">col-val</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">row-val</span>)))
+                       (<span style="color:#8be9fd;font-style:italic">declare</span> (<span style="color:#8be9fd;font-style:italic">ignorable</span> <span style="color:#ff79c6">,</span><span style="color:#8be9fd;font-style:italic">tile-val</span>))
+                       <span style="color:#ff79c6">,@</span><span style="color:#8be9fd;font-style:italic">body</span>))))</code></pre></div>
+<p>The macro takes in a map with all the tiles initialized, a tile-val which holds
+the name you want to use for the variable that holds the current tile. It also
+takes in some optional parameters via keys: row-val and col-val represent the
+names of the x and y variables if you want to access them within the body of the
+macro. If not supplied, they are generated. x-start, y-start, x-end, and y-end
+allow you to specify the start and end of the tile array to loop over. By
+default, it loops over all the tiles.</p>
+
+<p>To see this in use, we can update the initialize-tiles method:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-tiles</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">:col-val</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:row-val</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+    (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;tile</span> <span style="color:#f1fa8c">:blocked</span> t))))</code></pre></div>
+<p>If we were to expand the macro, it looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:for</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:from</span> <span style="color:#bd93f9">0</span> <span style="color:#f1fa8c">:below</span> (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> nil)
+                                  (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+                                  nil)
+        <span style="color:#f1fa8c">:do</span> (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:for</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:from</span> <span style="color:#bd93f9">0</span> <span style="color:#f1fa8c">:below</span> (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> nil)
+                                            (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+                                            nil)
+                  <span style="color:#f1fa8c">:do</span> (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)))
+                        (<span style="color:#8be9fd;font-style:italic">declare</span> (<span style="color:#8be9fd;font-style:italic">ignorable</span> <span style="color:#8be9fd;font-style:italic">tile</span>))
+                        (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+                                (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;tile</span> <span style="color:#f1fa8c">:blocked</span>
+                                               <span style="color:#8be9fd;font-style:italic">initial-blocked-value</span>)))))</code></pre></div>
+<h2 id="defining-rooms-and-tunnels">Defining rooms and tunnels</h2>
+
+<p>Before we get into the map generation, let&rsquo;s create a helper class that we&rsquo;ll
+use to represent rooms:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">rect</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:x1</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">rect/x1</span>)
+   (<span style="color:#8be9fd;font-style:italic">x2</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:x2</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">rect/x2</span>)
+   (<span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:y1</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">rect/y1</span>)
+   (<span style="color:#8be9fd;font-style:italic">y2</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:y2</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">rect/y2</span>)))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-instance</span> <span style="color:#f1fa8c">:after</span> ((<span style="color:#8be9fd;font-style:italic">rect</span> <span style="color:#8be9fd;font-style:italic">rect</span>) <span style="color:#8be9fd;font-style:italic">&amp;key</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">w</span> <span style="color:#8be9fd;font-style:italic">h</span>)
+  (<span style="color:#8be9fd;font-style:italic">with-slots</span> (<span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span>) <span style="color:#8be9fd;font-style:italic">rect</span>
+    (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x</span>
+          <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y</span>
+          <span style="color:#8be9fd;font-style:italic">x2</span> (<span style="color:#8be9fd;font-style:italic">+</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">w</span>)
+          <span style="color:#8be9fd;font-style:italic">y2</span> (<span style="color:#8be9fd;font-style:italic">+</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">h</span>))))</code></pre></div>
+<p>rect holds the values to represent the top left and bottom right corners of the
+rectangle. We also defined the initialize-instance method for the class, and
+allowed x y w h to be passed in, making it easier to create an instance of the class.</p>
+
+<p>Now we can carve rooms into the map:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">set-tile-slots</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#8be9fd;font-style:italic">tile</span>) <span style="color:#8be9fd;font-style:italic">&amp;key</span> (<span style="color:#8be9fd;font-style:italic">blocked</span> nil <span style="color:#8be9fd;font-style:italic">blocked-supplied-p</span>) (<span style="color:#8be9fd;font-style:italic">block-sight</span> nil <span style="color:#8be9fd;font-style:italic">block-sight-supplied-p</span>))
+  (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">blocked-supplied-p</span>
+      (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">slot-value</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">&#39;blocked</span>) <span style="color:#8be9fd;font-style:italic">blocked</span>))
+  (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">block-sight-supplied-p</span>
+      (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">slot-value</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">&#39;block-sight</span>) <span style="color:#8be9fd;font-style:italic">block-sight</span>)))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">create-room</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) (<span style="color:#8be9fd;font-style:italic">room</span> <span style="color:#8be9fd;font-style:italic">rect</span>))
+  (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span>
+                   <span style="color:#f1fa8c">:x-start</span> (<span style="color:#8be9fd;font-style:italic">1+</span> (<span style="color:#8be9fd;font-style:italic">rect/x1</span> <span style="color:#8be9fd;font-style:italic">room</span>)) <span style="color:#f1fa8c">:x-end</span> (<span style="color:#8be9fd;font-style:italic">rect/x2</span> <span style="color:#8be9fd;font-style:italic">room</span>)
+                   <span style="color:#f1fa8c">:y-start</span> (<span style="color:#8be9fd;font-style:italic">1+</span> (<span style="color:#8be9fd;font-style:italic">rect/y1</span> <span style="color:#8be9fd;font-style:italic">room</span>)) <span style="color:#f1fa8c">:y-end</span> (<span style="color:#8be9fd;font-style:italic">rect/y2</span> <span style="color:#8be9fd;font-style:italic">room</span>))
+    (<span style="color:#8be9fd;font-style:italic">set-tile-slots</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">:blocked</span> nil <span style="color:#f1fa8c">:block-sight</span> nil)))</code></pre></div>
+<p>We make sure to leave the border of the room untouched, which is why the loop
+starts at x1/y1 + 1, and the ending x2/y2 is excluded (remember, the
+map-tiles-loop macro uses :below in the loop). This ensures that if we make two
+rooms next to each other, one starting at (1,1) going to (6,6), and the other
+starting at (7,1) going to (9,6) there will still be a wall in between them.
+Otherwise, it would look like one room instead of two rooms.</p>
+
+<p>Now, let&rsquo;s make a couple rooms to test. Create the following method:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">make-map</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">room-1</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#bd93f9">20</span> <span style="color:#f1fa8c">:y</span> <span style="color:#bd93f9">15</span> <span style="color:#f1fa8c">:w</span> <span style="color:#bd93f9">10</span> <span style="color:#f1fa8c">:h</span> <span style="color:#bd93f9">15</span>))
+        (<span style="color:#8be9fd;font-style:italic">room-2</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#bd93f9">35</span> <span style="color:#f1fa8c">:y</span> <span style="color:#bd93f9">15</span> <span style="color:#f1fa8c">:w</span> <span style="color:#bd93f9">10</span> <span style="color:#f1fa8c">:h</span> <span style="color:#bd93f9">15</span>)))
+    (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">room-1</span>)
+    (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">room-2</span>)))</code></pre></div>
+<p>In order to call this method in our main function, we&rsquo;re going to update our
+game loop structure a bit. We&rsquo;ll add a new game-tick function, and update the main function to look like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">game-tick</span> (<span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">render-all</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
+         (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
+         (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
+    (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
+      (<span style="color:#8be9fd;font-style:italic">unless</span> (<span style="color:#8be9fd;font-style:italic">blocked-p</span> <span style="color:#8be9fd;font-style:italic">map</span>
+                         (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>))
+                         (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))
+        (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))))
+
+    <span style="color:#8be9fd;font-style:italic">exit</span>))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">main</span> ()
+  (<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span>
+      (<span style="color:#8be9fd;font-style:italic">config</span>)
+    (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                                  <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>)
+                                  <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                                  <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                                  <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:white</span>)))
+          (<span style="color:#8be9fd;font-style:italic">npc</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
+                               <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">-</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>) <span style="color:#bd93f9">5</span>)
+                               <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
+                               <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
+                               <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:yellow</span>)))
+          (<span style="color:#8be9fd;font-style:italic">entities</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">npc</span>))
+          (<span style="color:#8be9fd;font-style:italic">map</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;game-map</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span>)))
+      (<span style="color:#8be9fd;font-style:italic">make-map</span> (<span style="color:#8be9fd;font-style:italic">map</span>))
+
+      (<span style="color:#8be9fd;font-style:italic">do</span> ((<span style="color:#8be9fd;font-style:italic">exit</span> nil (<span style="color:#8be9fd;font-style:italic">game-tick</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)))
+          (<span style="color:#8be9fd;font-style:italic">exit</span>)))))</code></pre></div>
+<p>You can also remove the <strong>map</strong> global variable we had before, as we now create
+the map locally. While we&rsquo;re at it, we don&rsquo;t really need the initialize-tiles method in the
+game-map.lisp file. Since we always want the tiles initialized, we&rsquo;ll move that
+code into the initialize-instance method:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">initialize-instance</span> <span style="color:#f1fa8c">:after</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">&amp;key</span> (<span style="color:#8be9fd;font-style:italic">initial-blocked-value</span> t))
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) (<span style="color:#8be9fd;font-style:italic">make-array</span> (<span style="color:#8be9fd;font-style:italic">list</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>) (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>))))
+  (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">:col-val</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:row-val</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+                  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;tile</span> <span style="color:#f1fa8c">:blocked</span> <span style="color:#8be9fd;font-style:italic">initial-blocked-value</span>))))</code></pre></div>
+<p>Now if you run the game, it should look like this:
+<img src="/cl-rltut/create-test-rooms.png" alt="" /></p>
+
+<p>With the rooms being created, we should also create tunnels to connect them.
+For our generation code, the tunnels will just be a combination of a horizontal
+and vertical section, so there won&rsquo;t be any winding tunnels. Add the following
+two methods:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">start-x</span> (<span style="color:#8be9fd;font-style:italic">min</span> <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span>))
+        (<span style="color:#8be9fd;font-style:italic">end-x</span> (<span style="color:#8be9fd;font-style:italic">max</span> <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span>)))
+    (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span>
+                     <span style="color:#f1fa8c">:x-start</span> <span style="color:#8be9fd;font-style:italic">start-x</span> <span style="color:#f1fa8c">:x-end</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">end-x</span>)
+                     <span style="color:#f1fa8c">:y-start</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:y-end</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">y</span>))
+      (<span style="color:#8be9fd;font-style:italic">set-tile-slots</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">:blocked</span> nil <span style="color:#f1fa8c">:block-sight</span> nil))))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">create-v-tunnel</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span> <span style="color:#8be9fd;font-style:italic">x</span>)
+  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">start-y</span> (<span style="color:#8be9fd;font-style:italic">min</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span>))
+        (<span style="color:#8be9fd;font-style:italic">end-y</span> (<span style="color:#8be9fd;font-style:italic">max</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span>)))
+    (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span>
+                     <span style="color:#f1fa8c">:x-start</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:x-end</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">x</span>)
+                     <span style="color:#f1fa8c">:y-start</span> <span style="color:#8be9fd;font-style:italic">start-y</span> <span style="color:#f1fa8c">:y-end</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">end-y</span>))
+      (<span style="color:#8be9fd;font-style:italic">set-tile-slots</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#f1fa8c">:blocked</span> nil <span style="color:#f1fa8c">:block-sight</span> nil))))</code></pre></div>
+<p>Let&rsquo;s test it out by updating our make-map method:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">make-map</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">room-1</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#bd93f9">20</span> <span style="color:#f1fa8c">:y</span> <span style="color:#bd93f9">15</span> <span style="color:#f1fa8c">:w</span> <span style="color:#bd93f9">10</span> <span style="color:#f1fa8c">:h</span> <span style="color:#bd93f9">15</span>))
+        (<span style="color:#8be9fd;font-style:italic">room-2</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#bd93f9">35</span> <span style="color:#f1fa8c">:y</span> <span style="color:#bd93f9">15</span> <span style="color:#f1fa8c">:w</span> <span style="color:#bd93f9">10</span> <span style="color:#f1fa8c">:h</span> <span style="color:#bd93f9">15</span>)))
+    (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">room-1</span>)
+    (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">room-2</span>))
+
+  (<span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#bd93f9">25</span> <span style="color:#bd93f9">40</span> <span style="color:#bd93f9">23</span>))</code></pre></div>
+<p>Running the game now should look like:
+<img src="/cl-rltut/test-tunnel.png" alt="" /></p>
+
+<h2 id="generating-the-dungeon">Generating the dungeon</h2>
+
+<p>Now that we can create rooms and tunnels, it&rsquo;s time to move on to the actual
+dungeon generation. It will be relatively basic: we&rsquo;ll create a bunch of rooms,
+make sure they don&rsquo;t overlap, and connect them together.</p>
+
+<p>First, add a couple methods to the rect class to assist with detecting when two
+rooms overlap:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">center</span> ((<span style="color:#8be9fd;font-style:italic">rect</span> <span style="color:#8be9fd;font-style:italic">rect</span>))
+  (<span style="color:#8be9fd;font-style:italic">with-slots</span> (<span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span>) <span style="color:#8be9fd;font-style:italic">rect</span>
+    (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">center-x</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">/</span> (<span style="color:#8be9fd;font-style:italic">+</span> <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">x2</span>) <span style="color:#bd93f9">2</span>)))
+          (<span style="color:#8be9fd;font-style:italic">center-y</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">/</span> (<span style="color:#8be9fd;font-style:italic">+</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y2</span>) <span style="color:#bd93f9">2</span>))))
+      (<span style="color:#8be9fd;font-style:italic">values</span> <span style="color:#8be9fd;font-style:italic">center-x</span> <span style="color:#8be9fd;font-style:italic">center-y</span>))))
+
+(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">intersect</span> ((<span style="color:#8be9fd;font-style:italic">rect</span> <span style="color:#8be9fd;font-style:italic">rect</span>) (<span style="color:#8be9fd;font-style:italic">other</span> <span style="color:#8be9fd;font-style:italic">rect</span>))
+  <span style="color:#f1fa8c">&#34;Returns T if this RECT intersects with OTHER&#34;</span>
+  (<span style="color:#8be9fd;font-style:italic">and</span> (<span style="color:#8be9fd;font-style:italic">&lt;=</span> (<span style="color:#8be9fd;font-style:italic">rect/x1</span> <span style="color:#8be9fd;font-style:italic">rect</span>) (<span style="color:#8be9fd;font-style:italic">rect/x2</span> <span style="color:#8be9fd;font-style:italic">other</span>))
+       (<span style="color:#8be9fd;font-style:italic">&gt;=</span> (<span style="color:#8be9fd;font-style:italic">rect/x2</span> <span style="color:#8be9fd;font-style:italic">rect</span>) (<span style="color:#8be9fd;font-style:italic">rect/x1</span> <span style="color:#8be9fd;font-style:italic">other</span>))
+       (<span style="color:#8be9fd;font-style:italic">&lt;=</span> (<span style="color:#8be9fd;font-style:italic">rect/y1</span> <span style="color:#8be9fd;font-style:italic">rect</span>) (<span style="color:#8be9fd;font-style:italic">rect/y2</span> <span style="color:#8be9fd;font-style:italic">other</span>))
+       (<span style="color:#8be9fd;font-style:italic">&gt;=</span> (<span style="color:#8be9fd;font-style:italic">rect/y2</span> <span style="color:#8be9fd;font-style:italic">rect</span>) (<span style="color:#8be9fd;font-style:italic">rect/y1</span> <span style="color:#8be9fd;font-style:italic">other</span>))))</code></pre></div>
+<p>Add a couple of variables to the cl-rltut.lisp file, to use with our generation:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*room-max-size*</span> <span style="color:#bd93f9">10</span>)
+(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*room-min-size*</span> <span style="color:#bd93f9">6</span>)
+(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*max-rooms*</span> <span style="color:#bd93f9">30</span>)</code></pre></div>
+<p>Now, update the make-map method signature to take in those variables, and start
+calculating the position and size for the rooms:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">make-map</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">max-rooms</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">player</span>)
+  (<span style="color:#8be9fd;font-style:italic">do*</span> ((<span style="color:#8be9fd;font-style:italic">rooms</span> nil)
+        (<span style="color:#8be9fd;font-style:italic">num-rooms</span> <span style="color:#bd93f9">0</span>)
+        (<span style="color:#8be9fd;font-style:italic">room-index</span> <span style="color:#bd93f9">0</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">room-index</span>))
+        (<span style="color:#8be9fd;font-style:italic">w</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>)
+           (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>))
+        (<span style="color:#8be9fd;font-style:italic">h</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>)
+           (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>))
+        (<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">w</span>))
+           (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">w</span>)))
+        (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">h</span>))
+           (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">h</span>)))
+        (<span style="color:#8be9fd;font-style:italic">new-room</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">w</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">h</span>)
+                  (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">w</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">h</span>))
+        (<span style="color:#8be9fd;font-style:italic">can-place-p</span> t t))
+       ((<span style="color:#8be9fd;font-style:italic">&gt;=</span> <span style="color:#8be9fd;font-style:italic">room-index</span> <span style="color:#8be9fd;font-style:italic">max-rooms</span>))))</code></pre></div>
+<p>We&rsquo;re calculating each room&rsquo;s width and height as a random size between the
+room-min-size and room-max-size. The x and y position is a random point within
+the map. We then create a new-room variable with these calculated values. The
+rooms variable is going to hold all the rooms that we create, so we can check
+for overlaps, and the room-index and num-rooms will help with looking up the
+previous room. When we generate the tunnels, we&rsquo;ll just be connecting the
+current room to the previously created room.</p>
+
+<p>Update the do* body to check for intersections:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">dolist</span> (<span style="color:#8be9fd;font-style:italic">other-room</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)
+  (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">intersect</span> <span style="color:#8be9fd;font-style:italic">new-room</span> <span style="color:#8be9fd;font-style:italic">other-room</span>)
+      (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">can-place-p</span> nil)))</code></pre></div>
+<p>That just loops over the rooms list (which we&rsquo;ll populate later), and checks if
+the current room we&rsquo;re placing intersects with any of the other rooms. If there
+is an intersection, we&rsquo;re setting the can-place-p variable to show that we
+shouldn&rsquo;t actually create this room.</p>
+
+<p>After that dolist loop, we can create the new room, and connect it to the
+previous room:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">can-place-p</span>
+  (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">new-room</span>)
+  (<span style="color:#8be9fd;font-style:italic">multiple-value-bind</span> (<span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">new-y</span>) (<span style="color:#8be9fd;font-style:italic">center</span> <span style="color:#8be9fd;font-style:italic">new-room</span>)
+    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">zerop</span> <span style="color:#8be9fd;font-style:italic">num-rooms</span>)
+        (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) <span style="color:#8be9fd;font-style:italic">new-x</span>
+              (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) <span style="color:#8be9fd;font-style:italic">new-y</span>)
+        (<span style="color:#8be9fd;font-style:italic">multiple-value-bind</span> (<span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">prev-y</span>) (<span style="color:#8be9fd;font-style:italic">center</span> (<span style="color:#8be9fd;font-style:italic">car</span> (<span style="color:#8be9fd;font-style:italic">last</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)))
+          (<span style="color:#8be9fd;font-style:italic">cond</span> ((<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">random</span> <span style="color:#bd93f9">2</span>) <span style="color:#bd93f9">1</span>)
+                 (<span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">prev-y</span>)
+                 (<span style="color:#8be9fd;font-style:italic">create-v-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-y</span> <span style="color:#8be9fd;font-style:italic">new-y</span> <span style="color:#8be9fd;font-style:italic">new-x</span>))
+                (t
+                 (<span style="color:#8be9fd;font-style:italic">create-v-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-y</span> <span style="color:#8be9fd;font-style:italic">new-y</span> <span style="color:#8be9fd;font-style:italic">prev-x</span>)
+                 (<span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">new-y</span>)))))
+    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)
+        (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">rooms</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#8be9fd;font-style:italic">new-room</span>))
+        (<span style="color:#8be9fd;font-style:italic">push</span> <span style="color:#8be9fd;font-style:italic">new-room</span> (<span style="color:#8be9fd;font-style:italic">cdr</span> (<span style="color:#8be9fd;font-style:italic">last</span> <span style="color:#8be9fd;font-style:italic">rooms</span>))))
+    (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">num-rooms</span>)))</code></pre></div>
+<p>The tunnel creation randomly decides whether to use a horizontal or vertical
+tunnel first, so that it doesn&rsquo;t look so uniform. The tunnel is created from the
+center of the previous room, to the center of the new room. After the room is
+created, it&rsquo;s added to the rooms list so that we can check for overlaps in the
+next rooms.</p>
+
+<p>Running the code now, you should see a complete dungeon:
+<img src="/cl-rltut/dungeon-generation.png" alt="" /></p>
+
+<p>Note that since it&rsquo;s randomly generated, your output won&rsquo;t look exactly the same.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>That&rsquo;s all there is to it. It&rsquo;s a pretty simple algorithm, but gives decent results.</p>
+
+<p>You can find the current state of the code on <a href="https://github.com/nwforrer/cl-rltut/tree/part-3">Github</a>. The list of changes since
+the previous tutorial can be found at
+<a href="https://github.com/nwforrer/cl-rltut/compare/part-2...part-3">https://github.com/nwforrer/cl-rltut/compare/part-2...part-3</a>.</p>
+
+  </div>
+</div>
+<div class="container has-text-centered">
+    
+</div>
+
+<div class="container has-text-centered">
+  
+</div>
+<section class="section">
+  <div class="container has-text-centered">
+    <p></p>
+  </div>
+</section>
+
+
