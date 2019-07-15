@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+
+<title>Roguelike tutorial for Common Lisp - Part 4 - Field of view | nick forrer</title>
+
+<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
+integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+
+
+
+
+
+
+
+<div class="container">
+    <nav class="navbar level">
+      <div class="navbar-brand">
+          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
+      </div>           
+      <div class="navbar-menu has-text-centered is-active">
+          <div class="navbar-end is-centered">
+              
+                <a href="https://github.com/nwforrer" rel="me">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                </a>
+              
+                <a href="https://nwforrer.github.io/index.xml" rel="me">
+                  <span class="icon">
+                    <i class="fas fa-rss"></i>
+                  </span>
+                </a>
+              
+           </div>
+      </div>
+    </nav>
+  </div>
+
+<div class="container">
+  <h2 class="subtitle is-6">July 14, 2019</h2>
+  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 4 - Field of view</h1>
+  <div class="content">
+    
+
+<p>This tutorial series is based on the <a href="http://rogueliketutorials.com">Python Roguelike Tutorial</a>. This will be
+covering <a href="http://rogueliketutorials.com/tutorials/tcod/part-4/">Part 4</a> of that tutorial.</p>
+
+<p>In this post, we&rsquo;ll be computing the Field Of View (FOV) of the player. This
+will make exploring the dungeon much more interesting. When the game starts,
+only the tiles near the player will be visible. As the player explores the
+dungeon, the tiles that the player moves past will also become visible, allowing
+the map to be shown. However, any items or enemies will only be visible if they
+are within the players sight at a given time. Once the player moves on, the
+item/enemy will no longer be displayed.</p>
+
+<p>This post will differ from the Python Roguelike Tutorial more-so than previous
+posts. In the Python Tutorial, the libtcod library is being used, which provides
+FOV algorithms to calculate the FOV for you. However, we&rsquo;re using
+BearLibTerminal which does not have such algorithms. We could import the libtcod
+library to take advantage of those algorithms, but where&rsquo;s the fun in that?
+Instead we&rsquo;ll be writing the algorithm from scratch. The reference I&rsquo;m using
+for this is:
+<a href="http://www.roguebasin.com/index.php?title=Line%5Fof%5FSight%5F-%5FTobias%5FDowner">http://www.roguebasin.com/index.php?title=Line_of_Sight_-_Tobias_Downer</a>.
+RogueBasin has many <a href="http://www.roguebasin.com/index.php?title=Category:FOV">articles and techniques</a> for calculating the FOV. We&rsquo;ll be
+taking a very simplistic approach, which will work well enough for our needs.</p>
+
+<h2 id="calculating-the-field-of-view">Calculating the Field of View</h2>
+
+<p>First, we&rsquo;ll need a way to track which tiles are visible to the player, so that
+we can render them differently from the non-visible tiles:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">tile</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">blocked</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:blocked</span>
+            <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/blocked</span>
+            <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">block-sight</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:block-sight</span>
+                <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/block-sight</span>
+                <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">visible</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:visible</span>
+            <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/visible</span>
+            <span style="color:#f1fa8c">:initform</span> nil)))</code></pre></div>
+<p>The way the algorithm works, is we&rsquo;ll start at the player&rsquo;s position, trace rays
+in every direction, and check each tile that the ray intersects with. If the
+tile&rsquo;s block-sight slot is set to nil, then we&rsquo;ll set it&rsquo;s visible slot to t.
+Once a ray reaches a tile that has block-site set to t, then we stop tracing
+that ray, so all the tiles after it have their visible tiles set to nil.</p>
+
+<p>Create a new file named fov.lisp, and create a fov function, and a way to reset
+the visible slot on all tiles:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*fov-distance*</span> <span style="color:#bd93f9">5</span>)
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">reset-visibility</span> (<span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">map-tiles-loop</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">tile</span>)
+    (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> <span style="color:#8be9fd;font-style:italic">tile</span>) nil)))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">fov</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+  (<span style="color:#8be9fd;font-style:italic">reset-visibility</span> <span style="color:#8be9fd;font-style:italic">map</span>))</code></pre></div>
+<p>Now, we&rsquo;ll trace 360 lines around the player&rsquo;s position, one for each degree of
+a circle. Each line will be `fov-distance` long. We will use <a href="https://en.wikipedia.org/wiki/Linear%5Finterpolation">linear
+interpolation</a> to take incremential steps over the line. At each step, we&rsquo;ll
+check that we haven&rsquo;t gone outside the bounds of the map, and then check if the
+tile at that step has block-sight set to t. If neither of those are true, then
+the tile must be visible. The full function looks like this:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">degree-to-radian</span> (<span style="color:#8be9fd;font-style:italic">degree</span>)
+  (<span style="color:#8be9fd;font-style:italic">*</span> <span style="color:#8be9fd;font-style:italic">degree</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">pi</span> <span style="color:#bd93f9">180</span>)))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">diagonal-distance</span> (<span style="color:#8be9fd;font-style:italic">x0</span> <span style="color:#8be9fd;font-style:italic">y0</span> <span style="color:#8be9fd;font-style:italic">x1</span> <span style="color:#8be9fd;font-style:italic">y1</span>)
+  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">dx</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">x0</span> <span style="color:#8be9fd;font-style:italic">x1</span>))
+        (<span style="color:#8be9fd;font-style:italic">dy</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">y1</span> <span style="color:#8be9fd;font-style:italic">y0</span>)))
+    (<span style="color:#8be9fd;font-style:italic">max</span> (<span style="color:#8be9fd;font-style:italic">abs</span> <span style="color:#8be9fd;font-style:italic">dx</span>) (<span style="color:#8be9fd;font-style:italic">abs</span> <span style="color:#8be9fd;font-style:italic">dy</span>))))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">lerp</span> (<span style="color:#8be9fd;font-style:italic">start</span> <span style="color:#8be9fd;font-style:italic">end</span> <span style="color:#8be9fd;font-style:italic">time</span>)
+  (<span style="color:#8be9fd;font-style:italic">+</span> <span style="color:#8be9fd;font-style:italic">start</span> (<span style="color:#8be9fd;font-style:italic">*</span> <span style="color:#8be9fd;font-style:italic">time</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">end</span> <span style="color:#8be9fd;font-style:italic">start</span>))))
+
+(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">fov</span> (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+  (<span style="color:#8be9fd;font-style:italic">reset-visibility</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+
+  <span style="color:#6272a4">;; loop aver 360 degrees</span>
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">degree</span> <span style="color:#bd93f9">360</span>)
+    (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">rad</span> (<span style="color:#8be9fd;font-style:italic">degree-to-radian</span> <span style="color:#8be9fd;font-style:italic">degree</span>))
+           (<span style="color:#8be9fd;font-style:italic">nx</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">*</span> (<span style="color:#8be9fd;font-style:italic">cos</span> <span style="color:#8be9fd;font-style:italic">rad</span>) <span style="color:#8be9fd;font-style:italic">*fov-distance*</span>) <span style="color:#8be9fd;font-style:italic">x</span>)))
+           (<span style="color:#8be9fd;font-style:italic">ny</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">*</span> (<span style="color:#8be9fd;font-style:italic">sin</span> <span style="color:#8be9fd;font-style:italic">rad</span>) <span style="color:#8be9fd;font-style:italic">*fov-distance*</span>) <span style="color:#8be9fd;font-style:italic">y</span>)))
+           (<span style="color:#8be9fd;font-style:italic">d</span> (<span style="color:#8be9fd;font-style:italic">diagonal-distance</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">nx</span> <span style="color:#8be9fd;font-style:italic">ny</span>)))
+      (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#8be9fd;font-style:italic">d</span>)
+        (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">tx</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">lerp</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">nx</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#8be9fd;font-style:italic">d</span>))))
+              (<span style="color:#8be9fd;font-style:italic">ty</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">lerp</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">ny</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">tile</span> <span style="color:#8be9fd;font-style:italic">d</span>)))))
+          (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">or</span> (<span style="color:#8be9fd;font-style:italic">&lt;</span> <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#bd93f9">0</span>) (<span style="color:#8be9fd;font-style:italic">&gt;</span> <span style="color:#8be9fd;font-style:italic">tx</span> (<span style="color:#8be9fd;font-style:italic">game-map/w</span> <span style="color:#8be9fd;font-style:italic">map</span>)))
+              (<span style="color:#8be9fd;font-style:italic">return</span>))
+          (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">or</span> (<span style="color:#8be9fd;font-style:italic">&lt;</span> <span style="color:#8be9fd;font-style:italic">ty</span> <span style="color:#bd93f9">0</span>) (<span style="color:#8be9fd;font-style:italic">&gt;</span> <span style="color:#8be9fd;font-style:italic">ty</span> (<span style="color:#8be9fd;font-style:italic">game-map/h</span> <span style="color:#8be9fd;font-style:italic">map</span>)))
+              (<span style="color:#8be9fd;font-style:italic">return</span>))
+
+          <span style="color:#6272a4">;; if tile is a wall, mark as seen and stop the line early</span>
+          (<span style="color:#8be9fd;font-style:italic">when</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>))
+            (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t)
+            (<span style="color:#8be9fd;font-style:italic">return</span>))
+
+          (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t))))))</code></pre></div>
+<h2 id="rendering-the-field-of-view">Rendering the field of view</h2>
+
+<p>Now that we know which tiles are visible to the player, we can update our
+rendering to display them differently. Update the color map to include the
+colors we&rsquo;ll use to display the visible floors and walls:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:dark-wall</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">100</span>)
+                                <span style="color:#f1fa8c">:dark-ground</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">50</span> <span style="color:#bd93f9">50</span> <span style="color:#bd93f9">150</span>)
+                                <span style="color:#f1fa8c">:light-wall</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">130</span> <span style="color:#bd93f9">110</span> <span style="color:#bd93f9">50</span>)
+                                <span style="color:#f1fa8c">:light-ground</span> (<span style="color:#8be9fd;font-style:italic">blt:rgba</span> <span style="color:#bd93f9">200</span> <span style="color:#bd93f9">180</span> <span style="color:#bd93f9">50</span>)))</code></pre></div>
+<p>Now we can update the render-all function to change the tile colors depending on
+whether the tile is visible or not:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">render-all</span> (<span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span>)
+    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span>)
+      (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>))
+             (<span style="color:#8be9fd;font-style:italic">wall</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> <span style="color:#8be9fd;font-style:italic">tile</span>))
+             (<span style="color:#8be9fd;font-style:italic">visible</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> <span style="color:#8be9fd;font-style:italic">tile</span>)))
+        (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">visible</span>
+            (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">wall</span>
+                (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:light-wall</span>))
+                (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:light-ground</span>)))
+            (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">wall</span>
+                (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-wall</span>))
+                (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-ground</span>)))))))
+  (<span style="color:#8be9fd;font-style:italic">mapc</span> <span style="color:#50fa7b">#&#39;</span>(<span style="color:#8be9fd;font-style:italic">lambda</span> (<span style="color:#8be9fd;font-style:italic">entity</span>) (<span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">entity</span> <span style="color:#8be9fd;font-style:italic">map</span>)) <span style="color:#8be9fd;font-style:italic">entities</span>)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">blt:black</span>))
+  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<p>Now if you run the game, you should see something like this:
+<img src="/cl-rltut/display-fov.png" alt="" /></p>
+
+<h2 id="exploration">Exploration</h2>
+
+<p>One issue with how this works is the entire map is visible to the player at the
+start. We&rsquo;d rather hide the map, and only start to display it as the player
+explores. To do that, we&rsquo;ll add another tile slot to track which tiles have been
+explored, and then mark that `t` whenever the tile becomes visible. The
+difference between `explored` and `visible` is that once `explored` is set to t,
+it will not be reset.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">tile</span> ()
+  ((<span style="color:#8be9fd;font-style:italic">blocked</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:blocked</span>
+            <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/blocked</span>
+            <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">block-sight</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:block-sight</span>
+                <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/block-sight</span>
+                <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">visible</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:visible</span>
+            <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/visible</span>
+            <span style="color:#f1fa8c">:initform</span> nil)
+   (<span style="color:#8be9fd;font-style:italic">explored</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:explored</span>
+             <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">tile/explored</span>
+             <span style="color:#f1fa8c">:initform</span> nil)))</code></pre></div>
+<p>Now in the fov function, whenever the visible slot is set to true, also set the
+explored slot to t:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">when</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>))
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t
+        (<span style="color:#8be9fd;font-style:italic">tile/explored</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t)
+  (<span style="color:#8be9fd;font-style:italic">return</span>))
+
+(<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t
+      (<span style="color:#8be9fd;font-style:italic">tile/explored</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">tx</span> <span style="color:#8be9fd;font-style:italic">ty</span>)) t)</code></pre></div>
+<p>With that data being tracked, we can update the renderer to only show visible or
+explored tiles.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">render-all</span> (<span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
+  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
+  (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span>)
+    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span>)
+      (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">tile</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>))
+             (<span style="color:#8be9fd;font-style:italic">wall</span> (<span style="color:#8be9fd;font-style:italic">tile/block-sight</span> <span style="color:#8be9fd;font-style:italic">tile</span>))
+             (<span style="color:#8be9fd;font-style:italic">visible</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> <span style="color:#8be9fd;font-style:italic">tile</span>))
+             (<span style="color:#8be9fd;font-style:italic">explored</span> (<span style="color:#8be9fd;font-style:italic">tile/explored</span> <span style="color:#8be9fd;font-style:italic">tile</span>)))
+        (<span style="color:#8be9fd;font-style:italic">cond</span> (<span style="color:#8be9fd;font-style:italic">visible</span>
+               (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">wall</span>
+                   (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:light-wall</span>))
+                   (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:light-ground</span>)))
+               (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) <span style="color:#f1fa8c">#\Space</span>))
+              (<span style="color:#8be9fd;font-style:italic">explored</span>
+               (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">wall</span>
+                   (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-wall</span>))
+                   (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">*color-map*</span> <span style="color:#f1fa8c">:dark-ground</span>)))
+               (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) <span style="color:#f1fa8c">#\Space</span>))))))
+  (<span style="color:#8be9fd;font-style:italic">mapc</span> <span style="color:#50fa7b">#&#39;</span>(<span style="color:#8be9fd;font-style:italic">lambda</span> (<span style="color:#8be9fd;font-style:italic">entity</span>) (<span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">entity</span> <span style="color:#8be9fd;font-style:italic">map</span>)) <span style="color:#8be9fd;font-style:italic">entities</span>)
+  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">blt:black</span>))
+  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<p>The last step we&rsquo;ll want to do is to also update the entity draw method. We&rsquo;ll
+only want to draw entities that the player can see:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">draw</span> ((<span style="color:#8be9fd;font-style:italic">e</span> <span style="color:#8be9fd;font-style:italic">entity</span>) (<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>))
+  (<span style="color:#8be9fd;font-style:italic">with-slots</span> (<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#8be9fd;font-style:italic">char</span> <span style="color:#8be9fd;font-style:italic">color</span>) <span style="color:#8be9fd;font-style:italic">e</span>
+    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">tile/visible</span> (<span style="color:#8be9fd;font-style:italic">aref</span> (<span style="color:#8be9fd;font-style:italic">game-map/tiles</span> <span style="color:#8be9fd;font-style:italic">map</span>) <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>))
+        (<span style="color:#8be9fd;font-style:italic">setf</span>
+         (<span style="color:#8be9fd;font-style:italic">blt:background-color</span>) (<span style="color:#8be9fd;font-style:italic">blt:cell-background-color</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
+         (<span style="color:#8be9fd;font-style:italic">blt:color</span>) <span style="color:#8be9fd;font-style:italic">color</span>
+         (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>) <span style="color:#8be9fd;font-style:italic">char</span>))))</code></pre></div>
+<p>Now if you run the game, you should see something like this (after exploring a
+couple rooms):
+<img src="/cl-rltut/fov-exploration.png" alt="" /></p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>That&rsquo;s all there is to it. If you&rsquo;re interested in other more efficient
+algorithms, I&rsquo;d recommend checking out the <a href="http://www.roguebasin.com/index.php?title=Category:FOV">FOV section on RogueBasin</a>.</p>
+
+  </div>
+</div>
+<div class="container has-text-centered">
+    
+</div>
+
+<div class="container has-text-centered">
+  
+</div>
+<section class="section">
+  <div class="container has-text-centered">
+    <p></p>
+  </div>
+</section>
+
+
