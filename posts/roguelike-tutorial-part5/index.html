@@ -1,55 +1,61 @@
 <!DOCTYPE html>
-<html lang="en-us">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Roguelike tutorial for Common Lisp - Part 5 - Placing enemies - nick forrer</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta property="og:title" content="Roguelike tutorial for Common Lisp - Part 5 - Placing enemies" />
+<meta property="og:description" content="This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 5 of that tutorial.
+In this post, we&rsquo;ll start adding enemies to the dungeon. We won&rsquo;t be getting into the combat system yet, but we&rsquo;ll get collision detection and turn-based movement working.
+Placing enemies We&rsquo;ll start by randomly placing enemies during the dungeon generation. Add a `place-entities` method in the game-map.lisp file:
+(defun entity-at (entities x y) (dolist (entity entities) (if (and (= (entity/x entity) x) (= (entity/y entity) y)) (return entity)))) (defmethod place-entities ((map game-map) (room rect) entities max-enemies-per-room) (let ((num-monsters (random max-enemies-per-room))) (dotimes (monster-index num-monsters) (let ((x (&#43; (random (round (/ (- (rect/x2 room) (rect/x1 room) 1) 2))) (1&#43; (rect/x1 room)))) (y (&#43; (random (round (/ (- (rect/y2 room) (rect/y1 room) 1) 2))) (1&#43; (rect/y1 room))))) (unless (entity-at entities x y) (if (&lt; (random 100) 80) (nconc entities (list (make-instance &#39;entity :x x :y y :color (blt:green) :char #\o))) (nconc entities (list (make-instance &#39;entity :x x :y y :color (blt:yellow) :char #\T))))))))) We choose a random number of entities to generate, from 0 up to the max-enemies-per-room passed in." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nwforrer.github.io/posts/roguelike-tutorial-part5/" />
+<meta property="article:published_time" content="2019-07-15T23:19:00-04:00"/>
+<meta property="article:modified_time" content="2019-07-15T23:19:00-04:00"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Roguelike tutorial for Common Lisp - Part 5 - Placing enemies"/>
+<meta name="twitter:description" content="This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 5 of that tutorial.
+In this post, we&rsquo;ll start adding enemies to the dungeon. We won&rsquo;t be getting into the combat system yet, but we&rsquo;ll get collision detection and turn-based movement working.
+Placing enemies We&rsquo;ll start by randomly placing enemies during the dungeon generation. Add a `place-entities` method in the game-map.lisp file:
+(defun entity-at (entities x y) (dolist (entity entities) (if (and (= (entity/x entity) x) (= (entity/y entity) y)) (return entity)))) (defmethod place-entities ((map game-map) (room rect) entities max-enemies-per-room) (let ((num-monsters (random max-enemies-per-room))) (dotimes (monster-index num-monsters) (let ((x (&#43; (random (round (/ (- (rect/x2 room) (rect/x1 room) 1) 2))) (1&#43; (rect/x1 room)))) (y (&#43; (random (round (/ (- (rect/y2 room) (rect/y1 room) 1) 2))) (1&#43; (rect/y1 room))))) (unless (entity-at entities x y) (if (&lt; (random 100) 80) (nconc entities (list (make-instance &#39;entity :x x :y y :color (blt:green) :char #\o))) (nconc entities (list (make-instance &#39;entity :x x :y y :color (blt:yellow) :char #\T))))))))) We choose a random number of entities to generate, from 0 up to the max-enemies-per-room passed in."/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,300italic,400italic|Raleway:500,100,300" rel="stylesheet">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/main.css" /><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><script src="https://nwforrer.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper post">
+		<div class="header">
+	<h1 class="site-title">nick forrer</h1>
+	<div class="site-description"><h2>Game development and Lisp related posts</h2><nav class="nav social">
+			<ul class="flat"><a href="https://github.com/nwforrer" title="Github"><i data-feather="github"></i></a><a href="/index.xml" title="RSS"><i data-feather="rss"></i></a></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/categories/roguelike-tutorial">Roguelike Tutorials</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
 
 
+		<div class="post-header">
+			<h1 class="title">Roguelike tutorial for Common Lisp - Part 5 - Placing enemies</h1>
+			<div class="meta">Posted at &mdash; Jul 15, 2019</div>
+		</div>
 
-
-<title>Roguelike tutorial for Common Lisp - Part 5 - Placing enemies | nick forrer</title>
-
-<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
-integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
-<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-
-
-
-
-
-
-
-<div class="container">
-    <nav class="navbar level">
-      <div class="navbar-brand">
-          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
-      </div>           
-      <div class="navbar-menu has-text-centered is-active">
-          <div class="navbar-end is-centered">
-              
-                <a href="https://github.com/nwforrer" rel="me">
-                  <span class="icon">
-                    <i class="fab fa-github"></i>
-                  </span>
-                </a>
-              
-                <a href="https://nwforrer.github.io/index.xml" rel="me">
-                  <span class="icon">
-                    <i class="fas fa-rss"></i>
-                  </span>
-                </a>
-              
-           </div>
-      </div>
-    </nav>
-  </div>
-
-<div class="container">
-  <h2 class="subtitle is-6">July 15, 2019</h2>
-  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 5 - Placing enemies</h1>
-  <div class="content">
-    
+		<div class="markdown">
+			
 
 <p>This tutorial series is based on the <a href="http://rogueliketutorials.com">Python Roguelike Tutorial</a>. This will be
 covering <a href="http://rogueliketutorials.com/tutorials/tcod/part-5/">Part 5</a> of that tutorial.</p>
@@ -62,21 +68,21 @@ movement working.</p>
 
 <p>We&rsquo;ll start by randomly placing enemies during the dungeon generation. Add a
 `place-entities` method in the game-map.lisp file:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">entity-at</span> (<span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
-  (<span style="color:#8be9fd;font-style:italic">dolist</span> (<span style="color:#8be9fd;font-style:italic">entity</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
-    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">and</span> (<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">entity</span>) <span style="color:#8be9fd;font-style:italic">x</span>)
-             (<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">entity</span>) <span style="color:#8be9fd;font-style:italic">y</span>))
-        (<span style="color:#8be9fd;font-style:italic">return</span> <span style="color:#8be9fd;font-style:italic">entity</span>))))
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">entity-at</span> (<span style="color:#b8860b">entities</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>)
+  (<span style="color:#b8860b">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
+    (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">and</span> (<span style="color:#b8860b">=</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">x</span>)
+             (<span style="color:#b8860b">=</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">y</span>))
+        (<span style="color:#b8860b">return</span> <span style="color:#b8860b">entity</span>))))
 
-(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">place-entities</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) (<span style="color:#8be9fd;font-style:italic">room</span> <span style="color:#8be9fd;font-style:italic">rect</span>) <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">max-enemies-per-room</span>)
-  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">num-monsters</span> (<span style="color:#8be9fd;font-style:italic">random</span> <span style="color:#8be9fd;font-style:italic">max-enemies-per-room</span>)))
-    (<span style="color:#8be9fd;font-style:italic">dotimes</span> (<span style="color:#8be9fd;font-style:italic">monster-index</span> <span style="color:#8be9fd;font-style:italic">num-monsters</span>)
-      (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">/</span> (<span style="color:#8be9fd;font-style:italic">-</span> (<span style="color:#8be9fd;font-style:italic">rect/x2</span> <span style="color:#8be9fd;font-style:italic">room</span>) (<span style="color:#8be9fd;font-style:italic">rect/x1</span> <span style="color:#8be9fd;font-style:italic">room</span>) <span style="color:#bd93f9">1</span>) <span style="color:#bd93f9">2</span>))) (<span style="color:#8be9fd;font-style:italic">1+</span> (<span style="color:#8be9fd;font-style:italic">rect/x1</span> <span style="color:#8be9fd;font-style:italic">room</span>))))
-            (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">round</span> (<span style="color:#8be9fd;font-style:italic">/</span> (<span style="color:#8be9fd;font-style:italic">-</span> (<span style="color:#8be9fd;font-style:italic">rect/y2</span> <span style="color:#8be9fd;font-style:italic">room</span>) (<span style="color:#8be9fd;font-style:italic">rect/y1</span> <span style="color:#8be9fd;font-style:italic">room</span>) <span style="color:#bd93f9">1</span>) <span style="color:#bd93f9">2</span>))) (<span style="color:#8be9fd;font-style:italic">1+</span> (<span style="color:#8be9fd;font-style:italic">rect/y1</span> <span style="color:#8be9fd;font-style:italic">room</span>)))))
-        (<span style="color:#8be9fd;font-style:italic">unless</span> (<span style="color:#8be9fd;font-style:italic">entity-at</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
-          (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">&lt;</span> (<span style="color:#8be9fd;font-style:italic">random</span> <span style="color:#bd93f9">100</span>) <span style="color:#bd93f9">80</span>)
-              (<span style="color:#8be9fd;font-style:italic">nconc</span> <span style="color:#8be9fd;font-style:italic">entities</span> (<span style="color:#8be9fd;font-style:italic">list</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:green</span>) <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\o</span>)))
-              (<span style="color:#8be9fd;font-style:italic">nconc</span> <span style="color:#8be9fd;font-style:italic">entities</span> (<span style="color:#8be9fd;font-style:italic">list</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:yellow</span>) <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\T</span>)))))))))</code></pre></div>
+(<span style="color:#b8860b">defmethod</span> <span style="color:#b8860b">place-entities</span> ((<span style="color:#b8860b">map</span> <span style="color:#b8860b">game-map</span>) (<span style="color:#b8860b">room</span> <span style="color:#b8860b">rect</span>) <span style="color:#b8860b">entities</span> <span style="color:#b8860b">max-enemies-per-room</span>)
+  (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">num-monsters</span> (<span style="color:#b8860b">random</span> <span style="color:#b8860b">max-enemies-per-room</span>)))
+    (<span style="color:#b8860b">dotimes</span> (<span style="color:#b8860b">monster-index</span> <span style="color:#b8860b">num-monsters</span>)
+      (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">x</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">round</span> (<span style="color:#b8860b">/</span> (<span style="color:#b8860b">-</span> (<span style="color:#b8860b">rect/x2</span> <span style="color:#b8860b">room</span>) (<span style="color:#b8860b">rect/x1</span> <span style="color:#b8860b">room</span>) <span style="color:#666">1</span>) <span style="color:#666">2</span>))) (<span style="color:#b8860b">1+</span> (<span style="color:#b8860b">rect/x1</span> <span style="color:#b8860b">room</span>))))
+            (<span style="color:#b8860b">y</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">round</span> (<span style="color:#b8860b">/</span> (<span style="color:#b8860b">-</span> (<span style="color:#b8860b">rect/y2</span> <span style="color:#b8860b">room</span>) (<span style="color:#b8860b">rect/y1</span> <span style="color:#b8860b">room</span>) <span style="color:#666">1</span>) <span style="color:#666">2</span>))) (<span style="color:#b8860b">1+</span> (<span style="color:#b8860b">rect/y1</span> <span style="color:#b8860b">room</span>)))))
+        (<span style="color:#b8860b">unless</span> (<span style="color:#b8860b">entity-at</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>)
+          (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">&lt;</span> (<span style="color:#b8860b">random</span> <span style="color:#666">100</span>) <span style="color:#666">80</span>)
+              (<span style="color:#b8860b">nconc</span> <span style="color:#b8860b">entities</span> (<span style="color:#b8860b">list</span> (<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;entity</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:green</span>) <span style="color:#b8860b">:char</span> <span style="color:#b44">#\o</span>)))
+              (<span style="color:#b8860b">nconc</span> <span style="color:#b8860b">entities</span> (<span style="color:#b8860b">list</span> (<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;entity</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:yellow</span>) <span style="color:#b8860b">:char</span> <span style="color:#b44">#\T</span>)))))))))</code></pre></div>
 <p>We choose a random number of entities to generate, from 0 up to the
 max-enemies-per-room passed in. We then chose a random x and y position, within
 the passed in room boundaries. Then, as long as there isn&rsquo;t already an enemy at
@@ -86,46 +92,46 @@ which will be the weaker enemy.</p>
 
 <p>Call this new method after creating each room in the `make-map` method. The
 method will also need to take in two new parameters: the entities list, and the max-enemies-per-room.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defmethod</span> <span style="color:#8be9fd;font-style:italic">make-map</span> ((<span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-map</span>) <span style="color:#8be9fd;font-style:italic">max-rooms</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">max-enemies-per-room</span>)
-  (<span style="color:#8be9fd;font-style:italic">do*</span> ((<span style="color:#8be9fd;font-style:italic">rooms</span> nil)
-        (<span style="color:#8be9fd;font-style:italic">num-rooms</span> <span style="color:#bd93f9">0</span>)
-        (<span style="color:#8be9fd;font-style:italic">room-index</span> <span style="color:#bd93f9">0</span> (<span style="color:#8be9fd;font-style:italic">1+</span> <span style="color:#8be9fd;font-style:italic">room-index</span>))
-        (<span style="color:#8be9fd;font-style:italic">w</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>)
-           (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>))
-        (<span style="color:#8be9fd;font-style:italic">h</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>)
-           (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">room-max-size</span> <span style="color:#8be9fd;font-style:italic">room-min-size</span>)) <span style="color:#8be9fd;font-style:italic">room-min-size</span>))
-        (<span style="color:#8be9fd;font-style:italic">x</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">w</span>))
-           (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-width</span> <span style="color:#8be9fd;font-style:italic">w</span>)))
-        (<span style="color:#8be9fd;font-style:italic">y</span> (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">h</span>))
-           (<span style="color:#8be9fd;font-style:italic">random</span> (<span style="color:#8be9fd;font-style:italic">-</span> <span style="color:#8be9fd;font-style:italic">map-height</span> <span style="color:#8be9fd;font-style:italic">h</span>)))
-        (<span style="color:#8be9fd;font-style:italic">new-room</span> (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">w</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">h</span>)
-                  (<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;rect</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:w</span> <span style="color:#8be9fd;font-style:italic">w</span> <span style="color:#f1fa8c">:h</span> <span style="color:#8be9fd;font-style:italic">h</span>))
-        (<span style="color:#8be9fd;font-style:italic">can-place-p</span> t t))
-       ((<span style="color:#8be9fd;font-style:italic">&gt;=</span> <span style="color:#8be9fd;font-style:italic">room-index</span> <span style="color:#8be9fd;font-style:italic">max-rooms</span>))
-    (<span style="color:#8be9fd;font-style:italic">dolist</span> (<span style="color:#8be9fd;font-style:italic">other-room</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)
-      (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">intersect</span> <span style="color:#8be9fd;font-style:italic">new-room</span> <span style="color:#8be9fd;font-style:italic">other-room</span>)
-          (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">can-place-p</span> nil)))
-    (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">can-place-p</span>
-      (<span style="color:#8be9fd;font-style:italic">create-room</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">new-room</span>)
-      (<span style="color:#8be9fd;font-style:italic">multiple-value-bind</span> (<span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">new-y</span>) (<span style="color:#8be9fd;font-style:italic">center</span> <span style="color:#8be9fd;font-style:italic">new-room</span>)
-        (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">zerop</span> <span style="color:#8be9fd;font-style:italic">num-rooms</span>)
-            (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) <span style="color:#8be9fd;font-style:italic">new-x</span>
-                  (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) <span style="color:#8be9fd;font-style:italic">new-y</span>)
-            (<span style="color:#8be9fd;font-style:italic">multiple-value-bind</span> (<span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">prev-y</span>) (<span style="color:#8be9fd;font-style:italic">center</span> (<span style="color:#8be9fd;font-style:italic">car</span> (<span style="color:#8be9fd;font-style:italic">last</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)))
-              (<span style="color:#8be9fd;font-style:italic">cond</span> ((<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">random</span> <span style="color:#bd93f9">2</span>) <span style="color:#bd93f9">1</span>)
-                     (<span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">prev-y</span>)
-                     (<span style="color:#8be9fd;font-style:italic">create-v-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-y</span> <span style="color:#8be9fd;font-style:italic">new-y</span> <span style="color:#8be9fd;font-style:italic">new-x</span>))
-                    (t
-                     (<span style="color:#8be9fd;font-style:italic">create-v-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-y</span> <span style="color:#8be9fd;font-style:italic">new-y</span> <span style="color:#8be9fd;font-style:italic">prev-x</span>)
-                     (<span style="color:#8be9fd;font-style:italic">create-h-tunnel</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">prev-x</span> <span style="color:#8be9fd;font-style:italic">new-x</span> <span style="color:#8be9fd;font-style:italic">new-y</span>)))))
-        (<span style="color:#8be9fd;font-style:italic">place-entities</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">new-room</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">max-enemies-per-room</span>)
-        (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">null</span> <span style="color:#8be9fd;font-style:italic">rooms</span>)
-            (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">rooms</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#8be9fd;font-style:italic">new-room</span>))
-            (<span style="color:#8be9fd;font-style:italic">push</span> <span style="color:#8be9fd;font-style:italic">new-room</span> (<span style="color:#8be9fd;font-style:italic">cdr</span> (<span style="color:#8be9fd;font-style:italic">last</span> <span style="color:#8be9fd;font-style:italic">rooms</span>))))
-        (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">num-rooms</span>)))))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defmethod</span> <span style="color:#b8860b">make-map</span> ((<span style="color:#b8860b">map</span> <span style="color:#b8860b">game-map</span>) <span style="color:#b8860b">max-rooms</span> <span style="color:#b8860b">room-min-size</span> <span style="color:#b8860b">room-max-size</span> <span style="color:#b8860b">map-width</span> <span style="color:#b8860b">map-height</span> <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">max-enemies-per-room</span>)
+  (<span style="color:#b8860b">do*</span> ((<span style="color:#b8860b">rooms</span> <span style="color:#800">nil</span>)
+        (<span style="color:#b8860b">num-rooms</span> <span style="color:#666">0</span>)
+        (<span style="color:#b8860b">room-index</span> <span style="color:#666">0</span> (<span style="color:#b8860b">1+</span> <span style="color:#b8860b">room-index</span>))
+        (<span style="color:#b8860b">w</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">room-max-size</span> <span style="color:#b8860b">room-min-size</span>)) <span style="color:#b8860b">room-min-size</span>)
+           (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">room-max-size</span> <span style="color:#b8860b">room-min-size</span>)) <span style="color:#b8860b">room-min-size</span>))
+        (<span style="color:#b8860b">h</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">room-max-size</span> <span style="color:#b8860b">room-min-size</span>)) <span style="color:#b8860b">room-min-size</span>)
+           (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">room-max-size</span> <span style="color:#b8860b">room-min-size</span>)) <span style="color:#b8860b">room-min-size</span>))
+        (<span style="color:#b8860b">x</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">map-width</span> <span style="color:#b8860b">w</span>))
+           (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">map-width</span> <span style="color:#b8860b">w</span>)))
+        (<span style="color:#b8860b">y</span> (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">map-height</span> <span style="color:#b8860b">h</span>))
+           (<span style="color:#b8860b">random</span> (<span style="color:#b8860b">-</span> <span style="color:#b8860b">map-height</span> <span style="color:#b8860b">h</span>)))
+        (<span style="color:#b8860b">new-room</span> (<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;rect</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:w</span> <span style="color:#b8860b">w</span> <span style="color:#b8860b">:h</span> <span style="color:#b8860b">h</span>)
+                  (<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;rect</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:w</span> <span style="color:#b8860b">w</span> <span style="color:#b8860b">:h</span> <span style="color:#b8860b">h</span>))
+        (<span style="color:#b8860b">can-place-p</span> <span style="color:#800">t</span> <span style="color:#800">t</span>))
+       ((<span style="color:#b8860b">&gt;=</span> <span style="color:#b8860b">room-index</span> <span style="color:#b8860b">max-rooms</span>))
+    (<span style="color:#b8860b">dolist</span> (<span style="color:#b8860b">other-room</span> <span style="color:#b8860b">rooms</span>)
+      (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">intersect</span> <span style="color:#b8860b">new-room</span> <span style="color:#b8860b">other-room</span>)
+          (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">can-place-p</span> <span style="color:#800">nil</span>)))
+    (<span style="color:#b8860b">when</span> <span style="color:#b8860b">can-place-p</span>
+      (<span style="color:#b8860b">create-room</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">new-room</span>)
+      (<span style="color:#b8860b">multiple-value-bind</span> (<span style="color:#b8860b">new-x</span> <span style="color:#b8860b">new-y</span>) (<span style="color:#b8860b">center</span> <span style="color:#b8860b">new-room</span>)
+        (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">zerop</span> <span style="color:#b8860b">num-rooms</span>)
+            (<span style="color:#b8860b">setf</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) <span style="color:#b8860b">new-x</span>
+                  (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>) <span style="color:#b8860b">new-y</span>)
+            (<span style="color:#b8860b">multiple-value-bind</span> (<span style="color:#b8860b">prev-x</span> <span style="color:#b8860b">prev-y</span>) (<span style="color:#b8860b">center</span> (<span style="color:#b8860b">car</span> (<span style="color:#b8860b">last</span> <span style="color:#b8860b">rooms</span>)))
+              (<span style="color:#b8860b">cond</span> ((<span style="color:#b8860b">=</span> (<span style="color:#b8860b">random</span> <span style="color:#666">2</span>) <span style="color:#666">1</span>)
+                     (<span style="color:#b8860b">create-h-tunnel</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">prev-x</span> <span style="color:#b8860b">new-x</span> <span style="color:#b8860b">prev-y</span>)
+                     (<span style="color:#b8860b">create-v-tunnel</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">prev-y</span> <span style="color:#b8860b">new-y</span> <span style="color:#b8860b">new-x</span>))
+                    (<span style="color:#800">t</span>
+                     (<span style="color:#b8860b">create-v-tunnel</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">prev-y</span> <span style="color:#b8860b">new-y</span> <span style="color:#b8860b">prev-x</span>)
+                     (<span style="color:#b8860b">create-h-tunnel</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">prev-x</span> <span style="color:#b8860b">new-x</span> <span style="color:#b8860b">new-y</span>)))))
+        (<span style="color:#b8860b">place-entities</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">new-room</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">max-enemies-per-room</span>)
+        (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">null</span> <span style="color:#b8860b">rooms</span>)
+            (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">rooms</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">new-room</span>))
+            (<span style="color:#b8860b">push</span> <span style="color:#b8860b">new-room</span> (<span style="color:#b8860b">cdr</span> (<span style="color:#b8860b">last</span> <span style="color:#b8860b">rooms</span>))))
+        (<span style="color:#b8860b">incf</span> <span style="color:#b8860b">num-rooms</span>)))))</code></pre></div>
 <p>Since the method signature has been updated, we&rsquo;ll need to update the call from
 our main function:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">make-map</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">*max-rooms*</span> <span style="color:#8be9fd;font-style:italic">*room-min-size*</span> <span style="color:#8be9fd;font-style:italic">*room-max-size*</span> <span style="color:#8be9fd;font-style:italic">*map-width*</span> <span style="color:#8be9fd;font-style:italic">*map-height*</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">*max-enemies-per-room*</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">make-map</span> <span style="color:#b8860b">map</span> *max-rooms* *room-min-size* *room-max-size* *map-width* *map-height* <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> *max-enemies-per-room*)</code></pre></div>
 <p>The temporary npc we were using before can be deleted now as well.</p>
 
 <p>If you run the game, you should now see enemies spawning in rooms:
@@ -141,49 +147,49 @@ message.</p>
 
 <p>First, we&rsquo;ll add a `blocks` slot to the entity class. We&rsquo;ll also add a `name`
 slot while we&rsquo;re here, which we can use when printing entity information:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defclass</span> <span style="color:#8be9fd;font-style:italic">entity</span> ()
-  ((<span style="color:#8be9fd;font-style:italic">name</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:name</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/name</span>)
-   (<span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:x</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/x</span>)
-   (<span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:y</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/y</span>)
-   (<span style="color:#8be9fd;font-style:italic">char</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/char</span>)
-   (<span style="color:#8be9fd;font-style:italic">color</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:color</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/color</span>)
-   (<span style="color:#8be9fd;font-style:italic">blocks</span> <span style="color:#f1fa8c">:initarg</span> <span style="color:#f1fa8c">:blocks</span> <span style="color:#f1fa8c">:accessor</span> <span style="color:#8be9fd;font-style:italic">entity/blocks</span>)))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defclass</span> <span style="color:#b8860b">entity</span> ()
+  ((<span style="color:#b8860b">name</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:name</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/name</span>)
+   (<span style="color:#b8860b">x</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/x</span>)
+   (<span style="color:#b8860b">y</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/y</span>)
+   (<span style="color:#b8860b">char</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:char</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/char</span>)
+   (<span style="color:#b8860b">color</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:color</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/color</span>)
+   (<span style="color:#b8860b">blocks</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:blocks</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">entity/blocks</span>)))</code></pre></div>
 <p>Now, update everywhere an entity is created, to supply this additional
 information (creating the player, and the enemies)
 The player will look like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span>
-               <span style="color:#f1fa8c">:name</span> <span style="color:#f1fa8c">&#34;Player&#34;</span>
-               <span style="color:#f1fa8c">:x</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>)
-               <span style="color:#f1fa8c">:y</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
-               <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\@</span>
-               <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:white</span>)
-               <span style="color:#f1fa8c">:blocks</span> t)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;entity</span>
+               <span style="color:#b8860b">:name</span> <span style="color:#b44">&#34;Player&#34;</span>
+               <span style="color:#b8860b">:x</span> (<span style="color:#b8860b">/</span> *screen-width* <span style="color:#666">2</span>)
+               <span style="color:#b8860b">:y</span> (<span style="color:#b8860b">/</span> *screen-height* <span style="color:#666">2</span>)
+               <span style="color:#b8860b">:char</span> <span style="color:#b44">#\@</span>
+               <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:white</span>)
+               <span style="color:#b8860b">:blocks</span> <span style="color:#800">t</span>)</code></pre></div>
 <p>The enemies will look like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span> <span style="color:#f1fa8c">:name</span> <span style="color:#f1fa8c">&#34;Orc&#34;</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:green</span>) <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\o</span> <span style="color:#f1fa8c">:blocks</span> t)
-(<span style="color:#8be9fd;font-style:italic">make-instance</span> <span style="color:#f1fa8c">&#39;entity</span> <span style="color:#f1fa8c">:name</span> <span style="color:#f1fa8c">&#34;Troll&#34;</span> <span style="color:#f1fa8c">:x</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#f1fa8c">:y</span> <span style="color:#8be9fd;font-style:italic">y</span> <span style="color:#f1fa8c">:color</span> (<span style="color:#8be9fd;font-style:italic">blt:yellow</span>) <span style="color:#f1fa8c">:char</span> <span style="color:#f1fa8c">#\T</span> <span style="color:#f1fa8c">:blocks</span> t)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;entity</span> <span style="color:#b8860b">:name</span> <span style="color:#b44">&#34;Orc&#34;</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:green</span>) <span style="color:#b8860b">:char</span> <span style="color:#b44">#\o</span> <span style="color:#b8860b">:blocks</span> <span style="color:#800">t</span>)
+(<span style="color:#b8860b">make-instance</span> <span style="color:#b8860b">&#39;entity</span> <span style="color:#b8860b">:name</span> <span style="color:#b44">&#34;Troll&#34;</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:yellow</span>) <span style="color:#b8860b">:char</span> <span style="color:#b44">#\T</span> <span style="color:#b8860b">:blocks</span> <span style="color:#800">t</span>)</code></pre></div>
 <p>We&rsquo;ll need a way to check whether a blocking entity exists in a specific
 position on the map. Add a `blocking-entity-at` function, which will return the
 entity that is found, or nil otherwise:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">blocking-entity-at</span> (<span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">x</span> <span style="color:#8be9fd;font-style:italic">y</span>)
-  (<span style="color:#8be9fd;font-style:italic">dolist</span> (<span style="color:#8be9fd;font-style:italic">entity</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
-    (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">and</span> (<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">entity</span>) <span style="color:#8be9fd;font-style:italic">x</span>)
-             (<span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">entity</span>) <span style="color:#8be9fd;font-style:italic">y</span>)
-             (<span style="color:#8be9fd;font-style:italic">entity/blocks</span> <span style="color:#8be9fd;font-style:italic">entity</span>))
-        (<span style="color:#8be9fd;font-style:italic">return</span> <span style="color:#8be9fd;font-style:italic">entity</span>))))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">blocking-entity-at</span> (<span style="color:#b8860b">entities</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>)
+  (<span style="color:#b8860b">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
+    (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">and</span> (<span style="color:#b8860b">=</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">x</span>)
+             (<span style="color:#b8860b">=</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">y</span>)
+             (<span style="color:#b8860b">entity/blocks</span> <span style="color:#b8860b">entity</span>))
+        (<span style="color:#b8860b">return</span> <span style="color:#b8860b">entity</span>))))</code></pre></div>
 <p>Now, we can update the player movement code to check for enemy collisions when
 moving. To do this, we&rsquo;ll check whether the tile that the player will be moving
 to contains a blocking entity. If it does, we won&rsquo;t move the player, and we&rsquo;ll
 print out a message instead. Update the movement check in the `game-tick` function:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
-  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">destination-x</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>)))
-        (<span style="color:#8be9fd;font-style:italic">destination-y</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))))
-    (<span style="color:#8be9fd;font-style:italic">unless</span> (<span style="color:#8be9fd;font-style:italic">blocked-p</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">destination-x</span> <span style="color:#8be9fd;font-style:italic">destination-y</span>)
-      (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">target</span> (<span style="color:#8be9fd;font-style:italic">blocking-entity-at</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">destination-x</span> <span style="color:#8be9fd;font-style:italic">destination-y</span>)))
-        (<span style="color:#8be9fd;font-style:italic">cond</span> (<span style="color:#8be9fd;font-style:italic">target</span>
-               (<span style="color:#8be9fd;font-style:italic">format</span> t <span style="color:#f1fa8c">&#34;You kick the ~A.~%&#34;</span> (<span style="color:#8be9fd;font-style:italic">entity/name</span> <span style="color:#8be9fd;font-style:italic">target</span>)))
-              (t
-               (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))
-               (<span style="color:#8be9fd;font-style:italic">fov</span> <span style="color:#8be9fd;font-style:italic">map</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>))))))))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">when</span> <span style="color:#b8860b">move</span>
+  (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">destination-x</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">car</span> <span style="color:#b8860b">move</span>)))
+        (<span style="color:#b8860b">destination-y</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">cdr</span> <span style="color:#b8860b">move</span>))))
+    (<span style="color:#b8860b">unless</span> (<span style="color:#b8860b">blocked-p</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">destination-x</span> <span style="color:#b8860b">destination-y</span>)
+      (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">target</span> (<span style="color:#b8860b">blocking-entity-at</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">destination-x</span> <span style="color:#b8860b">destination-y</span>)))
+        (<span style="color:#b8860b">cond</span> (<span style="color:#b8860b">target</span>
+               (<span style="color:#b8860b">format</span> <span style="color:#800">t</span> <span style="color:#b44">&#34;You kick the ~A.~%&#34;</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">target</span>)))
+              (<span style="color:#800">t</span>
+               (<span style="color:#b8860b">move</span> <span style="color:#b8860b">player</span> (<span style="color:#b8860b">car</span> <span style="color:#b8860b">move</span>) (<span style="color:#b8860b">cdr</span> <span style="color:#b8860b">move</span>))
+               (<span style="color:#b8860b">fov</span> <span style="color:#b8860b">map</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>))))))))</code></pre></div>
 <p>Now if you run the game, you&rsquo;ll collide with enemies, and see messages printed
 out with the name of the entity that you collided with.</p>
 
@@ -196,7 +202,7 @@ keep track of whose turn it is (the player or the enemies), and only let them
 perform any action if it&rsquo;s their turn.</p>
 
 <p>Add a type definition to hold the various states for the game:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">deftype</span> <span style="color:#8be9fd;font-style:italic">game-states</span> () <span style="color:#ff79c6">&#39;</span>(<span style="color:#8be9fd;font-style:italic">member</span> <span style="color:#f1fa8c">:player-turn</span> <span style="color:#f1fa8c">:enemy-turn</span> <span style="color:#f1fa8c">:exit</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">deftype</span> <span style="color:#b8860b">game-states</span> () <span style="color:#666">&#39;</span>(<span style="color:#b8860b">member</span> <span style="color:#b8860b">:player-turn</span> <span style="color:#b8860b">:enemy-turn</span> <span style="color:#b8860b">:exit</span>))</code></pre></div>
 <p>Update the `game-tick` function to track and update the game-state. When the
 state is `:player-turn`, we&rsquo;ll let the player move and then set the state to
 `:enemy-turn`. When the state is `:enemy-turn`, we&rsquo;ll loop through all of the
@@ -204,33 +210,33 @@ enemies, and let them take a turn. For now, an enemy will just print something
 out when taking a turn, but later on we&rsquo;ll introduce enemy AI. We&rsquo;re also going
 to be using the game-state to track when the game will exit, rather than
 returning a boolean from the game-tick function.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">game-tick</span> (<span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">game-state</span>)
-  (<span style="color:#8be9fd;font-style:italic">declare</span> (<span style="color:#8be9fd;font-style:italic">type</span> <span style="color:#8be9fd;font-style:italic">game-states</span> <span style="color:#8be9fd;font-style:italic">game-state</span>))
-  (<span style="color:#8be9fd;font-style:italic">render-all</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">map</span>)
-  (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
-         (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
-         (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
-    (<span style="color:#8be9fd;font-style:italic">when</span> (<span style="color:#8be9fd;font-style:italic">and</span> <span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">eql</span> <span style="color:#8be9fd;font-style:italic">game-state</span> <span style="color:#f1fa8c">:player-turn</span>))
-      (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">destination-x</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>)))
-            (<span style="color:#8be9fd;font-style:italic">destination-y</span> (<span style="color:#8be9fd;font-style:italic">+</span> (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))))
-        (<span style="color:#8be9fd;font-style:italic">unless</span> (<span style="color:#8be9fd;font-style:italic">blocked-p</span> <span style="color:#8be9fd;font-style:italic">map</span> <span style="color:#8be9fd;font-style:italic">destination-x</span> <span style="color:#8be9fd;font-style:italic">destination-y</span>)
-          (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">target</span> (<span style="color:#8be9fd;font-style:italic">blocking-entity-at</span> <span style="color:#8be9fd;font-style:italic">entities</span> <span style="color:#8be9fd;font-style:italic">destination-x</span> <span style="color:#8be9fd;font-style:italic">destination-y</span>)))
-            (<span style="color:#8be9fd;font-style:italic">cond</span> (<span style="color:#8be9fd;font-style:italic">target</span>
-                   (<span style="color:#8be9fd;font-style:italic">format</span> t <span style="color:#f1fa8c">&#34;You kick the ~A.~%&#34;</span> (<span style="color:#8be9fd;font-style:italic">entity/name</span> <span style="color:#8be9fd;font-style:italic">target</span>)))
-                  (t
-                   (<span style="color:#8be9fd;font-style:italic">move</span> <span style="color:#8be9fd;font-style:italic">player</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>) (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>))
-                   (<span style="color:#8be9fd;font-style:italic">fov</span> <span style="color:#8be9fd;font-style:italic">map</span> (<span style="color:#8be9fd;font-style:italic">entity/x</span> <span style="color:#8be9fd;font-style:italic">player</span>) (<span style="color:#8be9fd;font-style:italic">entity/y</span> <span style="color:#8be9fd;font-style:italic">player</span>)))))
-          (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">game-state</span> <span style="color:#f1fa8c">:enemy-turn</span>))))
-    (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">exit</span>
-      (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">game-state</span> <span style="color:#f1fa8c">:exit</span>)))
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">game-tick</span> (<span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">game-state</span>)
+  (<span style="color:#b8860b">declare</span> (<span style="color:#b8860b">type</span> <span style="color:#b8860b">game-states</span> <span style="color:#b8860b">game-state</span>))
+  (<span style="color:#b8860b">render-all</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">map</span>)
+  (<span style="color:#b8860b">let*</span> ((<span style="color:#b8860b">action</span> (<span style="color:#b8860b">handle-keys</span>))
+         (<span style="color:#b8860b">move</span> (<span style="color:#b8860b">getf</span> <span style="color:#b8860b">action</span> <span style="color:#b8860b">:move</span>))
+         (<span style="color:#b8860b">exit</span> (<span style="color:#b8860b">getf</span> <span style="color:#b8860b">action</span> <span style="color:#b8860b">:quit</span>)))
+    (<span style="color:#b8860b">when</span> (<span style="color:#b8860b">and</span> <span style="color:#b8860b">move</span> (<span style="color:#b8860b">eql</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">:player-turn</span>))
+      (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">destination-x</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">car</span> <span style="color:#b8860b">move</span>)))
+            (<span style="color:#b8860b">destination-y</span> (<span style="color:#b8860b">+</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">cdr</span> <span style="color:#b8860b">move</span>))))
+        (<span style="color:#b8860b">unless</span> (<span style="color:#b8860b">blocked-p</span> <span style="color:#b8860b">map</span> <span style="color:#b8860b">destination-x</span> <span style="color:#b8860b">destination-y</span>)
+          (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">target</span> (<span style="color:#b8860b">blocking-entity-at</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">destination-x</span> <span style="color:#b8860b">destination-y</span>)))
+            (<span style="color:#b8860b">cond</span> (<span style="color:#b8860b">target</span>
+                   (<span style="color:#b8860b">format</span> <span style="color:#800">t</span> <span style="color:#b44">&#34;You kick the ~A.~%&#34;</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">target</span>)))
+                  (<span style="color:#800">t</span>
+                   (<span style="color:#b8860b">move</span> <span style="color:#b8860b">player</span> (<span style="color:#b8860b">car</span> <span style="color:#b8860b">move</span>) (<span style="color:#b8860b">cdr</span> <span style="color:#b8860b">move</span>))
+                   (<span style="color:#b8860b">fov</span> <span style="color:#b8860b">map</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>)))))
+          (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">:enemy-turn</span>))))
+    (<span style="color:#b8860b">when</span> <span style="color:#b8860b">exit</span>
+      (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">:exit</span>)))
 
-  (<span style="color:#8be9fd;font-style:italic">when</span> (<span style="color:#8be9fd;font-style:italic">eql</span> <span style="color:#8be9fd;font-style:italic">game-state</span> <span style="color:#f1fa8c">:enemy-turn</span>)
-    (<span style="color:#8be9fd;font-style:italic">dolist</span> (<span style="color:#8be9fd;font-style:italic">entity</span> <span style="color:#8be9fd;font-style:italic">entities</span>)
-      (<span style="color:#8be9fd;font-style:italic">if</span> (<span style="color:#8be9fd;font-style:italic">not</span> (<span style="color:#8be9fd;font-style:italic">eql</span> <span style="color:#8be9fd;font-style:italic">player</span> <span style="color:#8be9fd;font-style:italic">entity</span>))
-          (<span style="color:#8be9fd;font-style:italic">format</span> t <span style="color:#f1fa8c">&#34;The ~A sits idly.~%&#34;</span> (<span style="color:#8be9fd;font-style:italic">entity/name</span> <span style="color:#8be9fd;font-style:italic">entity</span>))))
-    (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">game-state</span> <span style="color:#f1fa8c">:player-turn</span>))
+  (<span style="color:#b8860b">when</span> (<span style="color:#b8860b">eql</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">:enemy-turn</span>)
+    (<span style="color:#b8860b">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
+      (<span style="color:#b8860b">if</span> (<span style="color:#b8860b">not</span> (<span style="color:#b8860b">eql</span> <span style="color:#b8860b">player</span> <span style="color:#b8860b">entity</span>))
+          (<span style="color:#b8860b">format</span> <span style="color:#800">t</span> <span style="color:#b44">&#34;The ~A sits idly.~%&#34;</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">entity</span>))))
+    (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">:player-turn</span>))
 
-  <span style="color:#8be9fd;font-style:italic">game-state</span>)</code></pre></div>
+  <span style="color:#b8860b">game-state</span>)</code></pre></div>
 <p>If you run the game now, when you move, you&rsquo;ll see all enemies that have been
 spawned in the dungeon print something out. Each time you move, you&rsquo;ll see the
 print statements.</p>
@@ -244,19 +250,33 @@ system, now that we have enemies to attack.</p>
 the previous tutorial can be found at
 <a href="https://github.com/nwforrer/cl-rltut/compare/part-4...part-5">https://github.com/nwforrer/cl-rltut/compare/part-4...part-5</a>.</p>
 
-  </div>
+<p>If you run into any issues, or have some feedback, please open an issue on this
+blogs <a href="https://github.com/nwforrer/blog/issues">GitHub repository</a>.</p>
+
+		</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = '';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by
+		Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
 </div>
-<div class="container has-text-centered">
-    
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div><a href="https://github.com/vividvilla/ezhil">Ezhil theme</a> | Built with <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
 </div>
 
-<div class="container has-text-centered">
-  
-</div>
-<section class="section">
-  <div class="container has-text-centered">
-    <p></p>
-  </div>
-</section>
-
-
+<script>feather.replace()</script>
+</body>
+</html>

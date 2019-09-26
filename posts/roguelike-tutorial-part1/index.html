@@ -1,55 +1,59 @@
 <!DOCTYPE html>
-<html lang="en-us">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Roguelike tutorial for Common Lisp - Part 1 - Drawing the player - nick forrer</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta property="og:title" content="Roguelike tutorial for Common Lisp - Part 1 - Drawing the player" />
+<meta property="og:description" content="Welcome to the first part of the tutorial! If you haven&rsquo;t already, please check out Part 0 to get the project created.
+This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 1 of that tutorial as closely as possible, with the exception of different structure to support more idiomatic Common Lisp, and with using BearLibTerminal instead of tcod.
+Opening a window First we&rsquo;ll work on getting a window created." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nwforrer.github.io/posts/roguelike-tutorial-part1/" />
+<meta property="article:published_time" content="2019-06-25T20:10:00-04:00"/>
+<meta property="article:modified_time" content="2019-06-25T20:10:00-04:00"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Roguelike tutorial for Common Lisp - Part 1 - Drawing the player"/>
+<meta name="twitter:description" content="Welcome to the first part of the tutorial! If you haven&rsquo;t already, please check out Part 0 to get the project created.
+This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 1 of that tutorial as closely as possible, with the exception of different structure to support more idiomatic Common Lisp, and with using BearLibTerminal instead of tcod.
+Opening a window First we&rsquo;ll work on getting a window created."/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,300italic,400italic|Raleway:500,100,300" rel="stylesheet">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/main.css" /><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><script src="https://nwforrer.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper post">
+		<div class="header">
+	<h1 class="site-title">nick forrer</h1>
+	<div class="site-description"><h2>Game development and Lisp related posts</h2><nav class="nav social">
+			<ul class="flat"><a href="https://github.com/nwforrer" title="Github"><i data-feather="github"></i></a><a href="/index.xml" title="RSS"><i data-feather="rss"></i></a></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/categories/roguelike-tutorial">Roguelike Tutorials</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
 
 
+		<div class="post-header">
+			<h1 class="title">Roguelike tutorial for Common Lisp - Part 1 - Drawing the player</h1>
+			<div class="meta">Posted at &mdash; Jun 25, 2019</div>
+		</div>
 
-
-<title>Roguelike tutorial for Common Lisp - Part 1 - Drawing the player | nick forrer</title>
-
-<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
-integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
-<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-
-
-
-
-
-
-
-<div class="container">
-    <nav class="navbar level">
-      <div class="navbar-brand">
-          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
-      </div>           
-      <div class="navbar-menu has-text-centered is-active">
-          <div class="navbar-end is-centered">
-              
-                <a href="https://github.com/nwforrer" rel="me">
-                  <span class="icon">
-                    <i class="fab fa-github"></i>
-                  </span>
-                </a>
-              
-                <a href="https://nwforrer.github.io/index.xml" rel="me">
-                  <span class="icon">
-                    <i class="fas fa-rss"></i>
-                  </span>
-                </a>
-              
-           </div>
-      </div>
-    </nav>
-  </div>
-
-<div class="container">
-  <h2 class="subtitle is-6">June 25, 2019</h2>
-  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 1 - Drawing the player</h1>
-  <div class="content">
-    
+		<div class="markdown">
+			
 
 <p>Welcome to the first part of the tutorial! If you haven&rsquo;t already, please check
 out <a href="/posts/roguelike-tutorial-part0">Part 0</a> to get the project created.</p>
@@ -71,33 +75,33 @@ functions). You can find the documentation for the high-level API here:
 
 <p>Open up emacs, and start your REPL. Load your project and change
 into your package:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">ql:quickload</span> <span style="color:#f1fa8c">:cl-rltut</span>)
-(<span style="color:#8be9fd;font-style:italic">in-package</span> <span style="color:#f1fa8c">:cl-rltut</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">ql:quickload</span> <span style="color:#b8860b">:cl-rltut</span>)
+(<span style="color:#b8860b">in-package</span> <span style="color:#b8860b">:cl-rltut</span>)</code></pre></div>
 <p>Now in the cl-rltut.lisp file, create a main function to open the window, set
 some configs, and enter into a loop:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">80</span>)
-(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">50</span>)
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defparameter</span> *screen-width* <span style="color:#666">80</span>)
+(<span style="color:#b8860b">defparameter</span> *screen-height* <span style="color:#666">50</span>)
 
-(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">draw</span> ()
-  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))
+(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">draw</span> ()
+  (<span style="color:#b8860b">blt:clear</span>)
+  (<span style="color:#b8860b">blt:refresh</span>))
 
-(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">config</span> ()
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.resizeable = true&#34;</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.size = ~Ax~A&#34;</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.title = Roguelike&#34;</span>))
+(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">config</span> ()
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.resizeable = true&#34;</span>)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.size = ~Ax~A&#34;</span> *screen-width* *screen-height*)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.title = Roguelike&#34;</span>))
 
-(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">main</span>()
-  (<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span>
-    (<span style="color:#8be9fd;font-style:italic">config</span>)
-    (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:do</span>
-      (<span style="color:#8be9fd;font-style:italic">draw</span>)
-      (<span style="color:#8be9fd;font-style:italic">blt:key-case</span> (<span style="color:#8be9fd;font-style:italic">blt:read</span>)
-                    (<span style="color:#f1fa8c">:escape</span> (<span style="color:#8be9fd;font-style:italic">return</span>))
-                    (<span style="color:#f1fa8c">:close</span> (<span style="color:#8be9fd;font-style:italic">return</span>))))))</code></pre></div>
+(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">main</span>()
+  (<span style="color:#b8860b">blt:with-terminal</span>
+    (<span style="color:#b8860b">config</span>)
+    (<span style="color:#b8860b">loop</span> <span style="color:#b8860b">:do</span>
+      (<span style="color:#b8860b">draw</span>)
+      (<span style="color:#b8860b">blt:key-case</span> (<span style="color:#b8860b">blt:read</span>)
+                    (<span style="color:#b8860b">:escape</span> (<span style="color:#b8860b">return</span>))
+                    (<span style="color:#b8860b">:close</span> (<span style="color:#b8860b">return</span>))))))</code></pre></div>
 <p>If you evaluate the buffer with `sly-eval-buffer`, you will be able to run the
 game from your REPL with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">main</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">main</span>)</code></pre></div>
 <p>If everything was done correctly, you
 should see an empty window:</p>
 
@@ -107,29 +111,29 @@ should see an empty window:</p>
 
 
 <p>Exciting! Let&rsquo;s step through the code to see what&rsquo;s going on.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">80</span>)
-(<span style="color:#8be9fd;font-style:italic">defparameter</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">50</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defparameter</span> *screen-width* <span style="color:#666">80</span>)
+(<span style="color:#b8860b">defparameter</span> *screen-height* <span style="color:#666">50</span>)</code></pre></div>
 <p>This creates two global variables to store the width and height of the window,
 in cells. By default, the size of the cell is selected based on the font size.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span> <span style="color:#ff79c6">...</span> )</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">blt:with-terminal</span> <span style="color:#666">...</span> )</code></pre></div>
 <p>This is a macro that wraps the terminal_open and terminal_close functions of the
 underlying library. The macro will open a terminal at the start, execute
 whatever code we pass within the call, and then close the terminal.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">config</span> ()
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.resizeable = true&#34;</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.size = ~Ax~A&#34;</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:set</span> <span style="color:#f1fa8c">&#34;window.title = Roguelike&#34;</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">config</span> ()
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.resizeable = true&#34;</span>)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.size = ~Ax~A&#34;</span> *screen-width* *screen-height*)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.title = Roguelike&#34;</span>))</code></pre></div>
 <p>The `set` function is how you configure various library options, such as
 managing fonts, or setting window settings like we do here. The nice thing about
 the Common Lisp wrapper is that it allows the use of format directives to format
 the string. We take advantage of that when setting the window.size property to
 the width and height variables that we defined earlier. If you&rsquo;re not familiar
 with Common Lisp format directives, you can read more about them here: <a href="http://www.gigamonkeys.com/book/a-few-format-recipes.html">http://www.gigamonkeys.com/book/a-few-format-recipes.html</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:do</span> <span style="color:#ff79c6">...</span> )</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">loop</span> <span style="color:#b8860b">:do</span> <span style="color:#666">...</span> )</code></pre></div>
 <p>This just starts up an endless loop that our game will run in.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">blt:key-case</span> (<span style="color:#8be9fd;font-style:italic">blt:read</span>)
-              (<span style="color:#f1fa8c">:escape</span> (<span style="color:#8be9fd;font-style:italic">return</span>))
-              (<span style="color:#f1fa8c">:close</span> (<span style="color:#8be9fd;font-style:italic">return</span>)))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">blt:key-case</span> (<span style="color:#b8860b">blt:read</span>)
+              (<span style="color:#b8860b">:escape</span> (<span style="color:#b8860b">return</span>))
+              (<span style="color:#b8860b">:close</span> (<span style="color:#b8860b">return</span>)))</code></pre></div>
 <p>`key-case` is another macro defined in the high level API of the Common Lisp
 bindings. This is used to handle keyboard input. As the first parameter, it
 takes in an event from the keyboard. We&rsquo;re using the `read` function to get
@@ -141,9 +145,9 @@ part of a clause, for example :escape, will match with the event returned from
 the `read` call. If the event is that the escape button was pressed, then the
 second part of the clause wil be executed. In that case, we just return from the
 main function to close the program. Only the code in a matching clause will be executed.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">draw</span> ()
-  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">draw</span> ()
+  (<span style="color:#b8860b">blt:clear</span>)
+  (<span style="color:#b8860b">blt:refresh</span>))</code></pre></div>
 <p>Here we just have a placeholder draw function, which will clear the window to
 black and then call `refresh`. All of the drawing that BearLibTerminal does is
 to an off-screen buffer, so we won&rsquo;t see our changes displayed until the
@@ -156,11 +160,11 @@ the window will stay invisible.</p>
 
 <p>Now that we have a window, let&rsquo;s get the player drawn to the screen. Update the
 draw function to look like this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">draw</span>()
-  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
-  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:color</span>) (<span style="color:#8be9fd;font-style:italic">blt:white</span>)
-        (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#bd93f9">10</span> <span style="color:#bd93f9">10</span>) <span style="color:#f1fa8c">#\@</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">draw</span>()
+  (<span style="color:#b8860b">blt:clear</span>)
+  (<span style="color:#b8860b">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:white</span>)
+        (<span style="color:#b8860b">blt:cell-char</span> <span style="color:#666">10</span> <span style="color:#666">10</span>) <span style="color:#b44">#\@</span>)
+  (<span style="color:#b8860b">blt:refresh</span>))</code></pre></div>
 <p>Pretty easy! When blt:color is set, that color will be used for all subsequent
 drawing until the color is changed again. Then, we set the cell at 10x10 to the
 @ character. If all works, you should see this when you run the game:</p>
@@ -174,48 +178,48 @@ drawing until the color is changed again. Then, we set the cell at 10x10 to the
 some keyboard input, so it won&rsquo;t be difficult to capture the arrow keys as well.
 Then we just need to have a way to track the players position so that we can
 update it when an arrow key is pressed. Make updates to the following functions:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">draw</span> (<span style="color:#8be9fd;font-style:italic">player-x</span> <span style="color:#8be9fd;font-style:italic">player-y</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:clear</span>)
-  (<span style="color:#8be9fd;font-style:italic">setf</span> (<span style="color:#8be9fd;font-style:italic">blt:color</span>) (<span style="color:#8be9fd;font-style:italic">blt:white</span>)
-        (<span style="color:#8be9fd;font-style:italic">blt:cell-char</span> <span style="color:#8be9fd;font-style:italic">player-x</span> <span style="color:#8be9fd;font-style:italic">player-y</span>) <span style="color:#f1fa8c">#\@</span>)
-  (<span style="color:#8be9fd;font-style:italic">blt:refresh</span>))
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">draw</span> (<span style="color:#b8860b">player-x</span> <span style="color:#b8860b">player-y</span>)
+  (<span style="color:#b8860b">blt:clear</span>)
+  (<span style="color:#b8860b">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:white</span>)
+        (<span style="color:#b8860b">blt:cell-char</span> <span style="color:#b8860b">player-x</span> <span style="color:#b8860b">player-y</span>) <span style="color:#b44">#\@</span>)
+  (<span style="color:#b8860b">blt:refresh</span>))
 
-(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">handle-keys</span> ()
-  (<span style="color:#8be9fd;font-style:italic">let</span> ((<span style="color:#8be9fd;font-style:italic">action</span> nil))
-    (<span style="color:#8be9fd;font-style:italic">blt:key-case</span> (<span style="color:#8be9fd;font-style:italic">blt:read</span>)
-                  (<span style="color:#f1fa8c">:up</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:move</span> (<span style="color:#8be9fd;font-style:italic">cons</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">-1</span>))))
-                  (<span style="color:#f1fa8c">:down</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:move</span> (<span style="color:#8be9fd;font-style:italic">cons</span> <span style="color:#bd93f9">0</span> <span style="color:#bd93f9">1</span>))))
-                  (<span style="color:#f1fa8c">:left</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:move</span> (<span style="color:#8be9fd;font-style:italic">cons</span> <span style="color:#bd93f9">-1</span> <span style="color:#bd93f9">0</span>))))
-                  (<span style="color:#f1fa8c">:right</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:move</span> (<span style="color:#8be9fd;font-style:italic">cons</span> <span style="color:#bd93f9">1</span> <span style="color:#bd93f9">0</span>))))
-                  (<span style="color:#f1fa8c">:escape</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:quit</span> t)))
-                  (<span style="color:#f1fa8c">:close</span> (<span style="color:#8be9fd;font-style:italic">setf</span> <span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">list</span> <span style="color:#f1fa8c">:quit</span> t))))
-    <span style="color:#8be9fd;font-style:italic">action</span>))
+(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">handle-keys</span> ()
+  (<span style="color:#b8860b">let</span> ((<span style="color:#b8860b">action</span> <span style="color:#800">nil</span>))
+    (<span style="color:#b8860b">blt:key-case</span> (<span style="color:#b8860b">blt:read</span>)
+                  (<span style="color:#b8860b">:up</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:move</span> (<span style="color:#b8860b">cons</span> <span style="color:#666">0</span> <span style="color:#666">-1</span>))))
+                  (<span style="color:#b8860b">:down</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:move</span> (<span style="color:#b8860b">cons</span> <span style="color:#666">0</span> <span style="color:#666">1</span>))))
+                  (<span style="color:#b8860b">:left</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:move</span> (<span style="color:#b8860b">cons</span> <span style="color:#666">-1</span> <span style="color:#666">0</span>))))
+                  (<span style="color:#b8860b">:right</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:move</span> (<span style="color:#b8860b">cons</span> <span style="color:#666">1</span> <span style="color:#666">0</span>))))
+                  (<span style="color:#b8860b">:escape</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:quit</span> <span style="color:#800">t</span>)))
+                  (<span style="color:#b8860b">:close</span> (<span style="color:#b8860b">setf</span> <span style="color:#b8860b">action</span> (<span style="color:#b8860b">list</span> <span style="color:#b8860b">:quit</span> <span style="color:#800">t</span>))))
+    <span style="color:#b8860b">action</span>))
 
-(<span style="color:#8be9fd;font-style:italic">defun</span> <span style="color:#8be9fd;font-style:italic">main</span>()
-  (<span style="color:#8be9fd;font-style:italic">blt:with-terminal</span>
-    (<span style="color:#8be9fd;font-style:italic">config</span>)
-    (<span style="color:#8be9fd;font-style:italic">loop</span> <span style="color:#f1fa8c">:with</span> <span style="color:#8be9fd;font-style:italic">player-x</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-width*</span> <span style="color:#bd93f9">2</span>)
-          <span style="color:#f1fa8c">:and</span> <span style="color:#8be9fd;font-style:italic">player-y</span> <span style="color:#8be9fd;font-style:italic">=</span> (<span style="color:#8be9fd;font-style:italic">/</span> <span style="color:#8be9fd;font-style:italic">*screen-height*</span> <span style="color:#bd93f9">2</span>)
-          <span style="color:#f1fa8c">:do</span>
-             (<span style="color:#8be9fd;font-style:italic">draw</span> <span style="color:#8be9fd;font-style:italic">player-x</span> <span style="color:#8be9fd;font-style:italic">player-y</span>)
-             (<span style="color:#8be9fd;font-style:italic">let*</span> ((<span style="color:#8be9fd;font-style:italic">action</span> (<span style="color:#8be9fd;font-style:italic">handle-keys</span>))
-                    (<span style="color:#8be9fd;font-style:italic">move</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>))
-                    (<span style="color:#8be9fd;font-style:italic">exit</span> (<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:quit</span>)))
-               (<span style="color:#8be9fd;font-style:italic">if</span> <span style="color:#8be9fd;font-style:italic">exit</span>
-                   (<span style="color:#8be9fd;font-style:italic">return</span>))
-               (<span style="color:#8be9fd;font-style:italic">when</span> <span style="color:#8be9fd;font-style:italic">move</span>
-                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-x</span> (<span style="color:#8be9fd;font-style:italic">car</span> <span style="color:#8be9fd;font-style:italic">move</span>))
-                 (<span style="color:#8be9fd;font-style:italic">incf</span> <span style="color:#8be9fd;font-style:italic">player-y</span> (<span style="color:#8be9fd;font-style:italic">cdr</span> <span style="color:#8be9fd;font-style:italic">move</span>)))))))</code></pre></div>
+(<span style="color:#b8860b">defun</span> <span style="color:#b8860b">main</span>()
+  (<span style="color:#b8860b">blt:with-terminal</span>
+    (<span style="color:#b8860b">config</span>)
+    (<span style="color:#b8860b">loop</span> <span style="color:#b8860b">:with</span> <span style="color:#b8860b">player-x</span> <span style="color:#b8860b">=</span> (<span style="color:#b8860b">/</span> *screen-width* <span style="color:#666">2</span>)
+          <span style="color:#b8860b">:and</span> <span style="color:#b8860b">player-y</span> <span style="color:#b8860b">=</span> (<span style="color:#b8860b">/</span> *screen-height* <span style="color:#666">2</span>)
+          <span style="color:#b8860b">:do</span>
+             (<span style="color:#b8860b">draw</span> <span style="color:#b8860b">player-x</span> <span style="color:#b8860b">player-y</span>)
+             (<span style="color:#b8860b">let*</span> ((<span style="color:#b8860b">action</span> (<span style="color:#b8860b">handle-keys</span>))
+                    (<span style="color:#b8860b">move</span> (<span style="color:#b8860b">getf</span> <span style="color:#b8860b">action</span> <span style="color:#b8860b">:move</span>))
+                    (<span style="color:#b8860b">exit</span> (<span style="color:#b8860b">getf</span> <span style="color:#b8860b">action</span> <span style="color:#b8860b">:quit</span>)))
+               (<span style="color:#b8860b">if</span> <span style="color:#b8860b">exit</span>
+                   (<span style="color:#b8860b">return</span>))
+               (<span style="color:#b8860b">when</span> <span style="color:#b8860b">move</span>
+                 (<span style="color:#b8860b">incf</span> <span style="color:#b8860b">player-x</span> (<span style="color:#b8860b">car</span> <span style="color:#b8860b">move</span>))
+                 (<span style="color:#b8860b">incf</span> <span style="color:#b8860b">player-y</span> (<span style="color:#b8860b">cdr</span> <span style="color:#b8860b">move</span>)))))))</code></pre></div>
 <p>If you run the game now, you should be able to move the player around using the
 arrow keys.</p>
 
 <p>We created a new &ldquo;handle-keys&rdquo; function, and moved the input handling code into
 it. handle-keys returns a property list. When one of the arrow keys is pressed,
 the function would return something like:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp"><span style="color:#ff79c6">&#39;</span>(<span style="color:#f1fa8c">:move</span> (<span style="color:#bd93f9">0</span> <span style="color:#ff79c6">.</span> <span style="color:#bd93f9">1</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp"><span style="color:#666">&#39;</span>(<span style="color:#b8860b">:move</span> (<span style="color:#666">0</span> <span style="color:#666">.</span> <span style="color:#666">1</span>))</code></pre></div>
 <p>When looking at the return value, we can check what type of action is returned
 with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">getf</span> <span style="color:#8be9fd;font-style:italic">action</span> <span style="color:#f1fa8c">:move</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">getf</span> <span style="color:#b8860b">action</span> <span style="color:#b8860b">:move</span>)</code></pre></div>
 <p>If we run that on the previous example, the result would be the (0 . 1), telling
 us that there was a move action to increment the player-y by 1. We can get the x
 and y portion of that with the car and cdr functions respectively. If there was no
@@ -230,21 +234,35 @@ changed in the future to add some more structure, but works for now.</p>
 code on <a href="https://github.com/nwforrer/cl-rltut/tree/part-1">Github</a>. The list of changes since the previous tutorial can be found at
 <a href="https://github.com/nwforrer/cl-rltut/compare/part-0...part-1">https://github.com/nwforrer/cl-rltut/compare/part-0...part-1</a>.</p>
 
+<p>If you run into any issues, or have some feedback, please open an issue on this
+blogs <a href="https://github.com/nwforrer/blog/issues">GitHub repository</a>.</p>
+
 <p>Continue to the <a href="/posts/roguelike-tutorial-part2">part 2</a>.</p>
 
-  </div>
+		</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = '';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by
+		Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
 </div>
-<div class="container has-text-centered">
-    
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div><a href="https://github.com/vividvilla/ezhil">Ezhil theme</a> | Built with <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
 </div>
 
-<div class="container has-text-centered">
-  
-</div>
-<section class="section">
-  <div class="container has-text-centered">
-    <p></p>
-  </div>
-</section>
-
-
+<script>feather.replace()</script>
+</body>
+</html>

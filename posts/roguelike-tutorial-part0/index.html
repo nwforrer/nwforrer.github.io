@@ -1,55 +1,57 @@
 <!DOCTYPE html>
-<html lang="en-us">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Roguelike tutorial for Common Lisp - Part 0 - Setup - nick forrer</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta property="og:title" content="Roguelike tutorial for Common Lisp - Part 0 - Setup" />
+<meta property="og:description" content="This set of tutorials is going to follow the Python TCOD tutorial, but will be written in Common Lisp and use the BearLibTerminal library.
+Prior Knowledge This tutorial assumes you are familiar with programming in Common Lisp. If you&rsquo;re not familiar, I would highly recommend checking out A Road to Common Lisp on Steve Losh&rsquo;s blog. It provides many valuable resources to get up to speed with Common Lisp, and is how I got started." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nwforrer.github.io/posts/roguelike-tutorial-part0/" />
+<meta property="article:published_time" content="2019-06-23T10:24:00-04:00"/>
+<meta property="article:modified_time" content="2019-06-23T10:24:00-04:00"/>
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Roguelike tutorial for Common Lisp - Part 0 - Setup"/>
+<meta name="twitter:description" content="This set of tutorials is going to follow the Python TCOD tutorial, but will be written in Common Lisp and use the BearLibTerminal library.
+Prior Knowledge This tutorial assumes you are familiar with programming in Common Lisp. If you&rsquo;re not familiar, I would highly recommend checking out A Road to Common Lisp on Steve Losh&rsquo;s blog. It provides many valuable resources to get up to speed with Common Lisp, and is how I got started."/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,300italic,400italic|Raleway:500,100,300" rel="stylesheet">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/main.css" /><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><script src="https://nwforrer.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper post">
+		<div class="header">
+	<h1 class="site-title">nick forrer</h1>
+	<div class="site-description"><h2>Game development and Lisp related posts</h2><nav class="nav social">
+			<ul class="flat"><a href="https://github.com/nwforrer" title="Github"><i data-feather="github"></i></a><a href="/index.xml" title="RSS"><i data-feather="rss"></i></a></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/categories/roguelike-tutorial">Roguelike Tutorials</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
 
 
+		<div class="post-header">
+			<h1 class="title">Roguelike tutorial for Common Lisp - Part 0 - Setup</h1>
+			<div class="meta">Posted at &mdash; Jun 23, 2019</div>
+		</div>
 
-
-<title>Roguelike tutorial for Common Lisp - Part 0 - Setup | nick forrer</title>
-
-<link rel="stylesheet" href="https://nwforrer.github.io//css/styles.css">
-
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" 
-integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ" crossorigin="anonymous">
-<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-
-
-
-
-
-
-
-<div class="container">
-    <nav class="navbar level">
-      <div class="navbar-brand">
-          <a class="nav-item" href="https://nwforrer.github.io/"><h1 class="title is-3">nick forrer</h1></a>
-      </div>           
-      <div class="navbar-menu has-text-centered is-active">
-          <div class="navbar-end is-centered">
-              
-                <a href="https://github.com/nwforrer" rel="me">
-                  <span class="icon">
-                    <i class="fab fa-github"></i>
-                  </span>
-                </a>
-              
-                <a href="https://nwforrer.github.io/index.xml" rel="me">
-                  <span class="icon">
-                    <i class="fas fa-rss"></i>
-                  </span>
-                </a>
-              
-           </div>
-      </div>
-    </nav>
-  </div>
-
-<div class="container">
-  <h2 class="subtitle is-6">June 23, 2019</h2>
-  <h1 class="subtitle is-size-4-mobile is-size-3-desktop">Roguelike tutorial for Common Lisp - Part 0 - Setup</h1>
-  <div class="content">
-    
+		<div class="markdown">
+			
 
 <p>This set of tutorials is going to follow the <a href="http://rogueliketutorials.com/tutorials/tcod/">Python TCOD tutorial</a>, but will be
 written in Common Lisp and use the BearLibTerminal library.</p>
@@ -91,26 +93,26 @@ installed, it will be easy to generate a project skeleton using <a href="https:/
 
 <p>First, open emacs and start your REPL (if you&rsquo;re using sly, the Emacs command is
 just M-x &ldquo;sly&rdquo;). In the REPL:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">ql:quickload</span> <span style="color:#f1fa8c">:quickproject</span>)
-(<span style="color:#8be9fd;font-style:italic">quickproject:make-project</span> #p&#34;cl-rltut&#34; <span style="color:#f1fa8c">:depends-on</span> <span style="color:#ff79c6">&#39;</span>(<span style="color:#f1fa8c">:cl-blt</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">ql:quickload</span> <span style="color:#b8860b">:quickproject</span>)
+(<span style="color:#b8860b">quickproject:make-project</span> #p&#34;cl-rltut&#34; <span style="color:#b8860b">:depends-on</span> <span style="color:#666">&#39;</span>(<span style="color:#b8860b">:cl-blt</span>))</code></pre></div>
 <p>That should create a &ldquo;cl-rltut&rdquo; directory within the current working
 directory of your REPL (this can be shown for sly with the &ldquo;sly-pwd&rdquo; command,
 and changed with the &ldquo;sly-cd&rdquo; command). Within the project directory, you should
 see an ASDF file named &ldquo;cl-rltut.asd&rdquo;, which looks like the following:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">asdf:defsystem</span> <span style="color:#f1fa8c">#:cl-rltut</span>
-  <span style="color:#f1fa8c">:description</span> <span style="color:#f1fa8c">&#34;Describe cl-rltut here&#34;</span>
-  <span style="color:#f1fa8c">:author</span> <span style="color:#f1fa8c">&#34;Nick Forrer&#34;</span>
-  <span style="color:#f1fa8c">:license</span>  <span style="color:#f1fa8c">&#34;MIT&#34;</span>
-  <span style="color:#f1fa8c">:version</span> <span style="color:#f1fa8c">&#34;0.0.1&#34;</span>
-  <span style="color:#f1fa8c">:serial</span> t
-  <span style="color:#f1fa8c">:depends-on</span> (<span style="color:#f1fa8c">#:cl-blt</span>)
-  <span style="color:#f1fa8c">:components</span> ((<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;package&#34;</span>)
-               (<span style="color:#f1fa8c">:file</span> <span style="color:#f1fa8c">&#34;cl-rltut&#34;</span>)))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">asdf:defsystem</span> <span style="color:#b8860b">#:cl-rltut</span>
+  <span style="color:#b8860b">:description</span> <span style="color:#b44">&#34;Describe cl-rltut here&#34;</span>
+  <span style="color:#b8860b">:author</span> <span style="color:#b44">&#34;Nick Forrer&#34;</span>
+  <span style="color:#b8860b">:license</span>  <span style="color:#b44">&#34;MIT&#34;</span>
+  <span style="color:#b8860b">:version</span> <span style="color:#b44">&#34;0.0.1&#34;</span>
+  <span style="color:#b8860b">:serial</span> <span style="color:#800">t</span>
+  <span style="color:#b8860b">:depends-on</span> (<span style="color:#b8860b">#:cl-blt</span>)
+  <span style="color:#b8860b">:components</span> ((<span style="color:#b8860b">:file</span> <span style="color:#b44">&#34;package&#34;</span>)
+               (<span style="color:#b8860b">:file</span> <span style="color:#b44">&#34;cl-rltut&#34;</span>)))</code></pre></div>
 <p>You will also need to download the cl-blt package, which contains the
 Common Lisp bindings for BearLibTerminal. The reason for this is because
 cl-blt is not currently available in an online repository that
 Quicklisp could download it automatically. Download the package using:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">git clone https://github.com/sjl/cl-blt.git ~/quicklisp/local-projects/cl-blt</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">git clone https://github.com/sjl/cl-blt.git ~/quicklisp/local-projects/cl-blt</code></pre></div>
 <p>That will clone the cl-blt Git repo into a directory that Quicklisp will look at
 when trying to load an ASDF system.</p>
 
@@ -124,34 +126,45 @@ should be placed in a &ldquo;lib&rdquo; directory in the root of your project.</
 <p>To make it easier to load your project from the REPL, you can create a symlink
 in the local-projects directly that points to your project, so that Quicklisp
 can always find it (use the correct path to your project instead of ~/src/lisp/cl-rltut):</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">ln -s ~/src/lisp/cl-rltut ~/quicklisp/local-projects</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sh" data-lang="sh">ln -s ~/src/lisp/cl-rltut ~/quicklisp/local-projects</code></pre></div>
 <p>With all of that in place, you should now be able to load your projects system
 in the REPL to ensure in can find all the dependencies with:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#8be9fd;font-style:italic">ql:quickload</span> <span style="color:#f1fa8c">:cl-rltut</span>)</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-common-lisp" data-lang="common-lisp">(<span style="color:#b8860b">ql:quickload</span> <span style="color:#b8860b">:cl-rltut</span>)</code></pre></div>
 <p>Assuming you don&rsquo;t see any errors, then your project is all set to continue with
 the tutorial! To see what the project should look like at this point, you can
 find the current state for Part 0 here: <a href="https://github.com/nwforrer/cl-rltut/tree/part-0">https://github.com/nwforrer/cl-rltut/tree/part-0</a>.</p>
 
 <h2 id="questions-and-feedback">Questions and Feedback</h2>
 
-<p>If you run into any issues, or have some feedback, feel free to email me at:
-nwforrer AT gmail.com.</p>
+<p>If you run into any issues, or have some feedback, please open an issue on this
+blogs <a href="https://github.com/nwforrer/blog/issues">GitHub repository</a>.</p>
 
 <p>Continue to the <a href="/posts/roguelike-tutorial-part1">next tutorial</a>.</p>
 
-  </div>
+		</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = '';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by
+		Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
 </div>
-<div class="container has-text-centered">
-    
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div><a href="https://github.com/vividvilla/ezhil">Ezhil theme</a> | Built with <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
 </div>
 
-<div class="container has-text-centered">
-  
-</div>
-<section class="section">
-  <div class="container has-text-centered">
-    <p></p>
-  </div>
-</section>
-
-
+<script>feather.replace()</script>
+</body>
+</html>
