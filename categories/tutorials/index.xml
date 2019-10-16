@@ -6,10 +6,20 @@
     <description>Recent content in tutorials on nick forrer</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 15 Jul 2019 23:19:00 -0400</lastBuildDate>
+    <lastBuildDate>Wed, 16 Oct 2019 06:55:00 -0400</lastBuildDate>
     
 	<atom:link href="https://nwforrer.github.io/categories/tutorials/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Roguelike tutorial for Common Lisp - Part 6 - Combat</title>
+      <link>https://nwforrer.github.io/posts/roguelike-tutorial-part6/</link>
+      <pubDate>Wed, 16 Oct 2019 06:55:00 -0400</pubDate>
+      
+      <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part6/</guid>
+      <description>This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 6 of that tutorial.
+In this part, we will be adding a combat system, allowing players to kill monsters, as well as be killed. To accomplish this, we will also be adding a component system, and implementing an A* pathfinding algorithm. This will be a relatively long post, so let&amp;rsquo;s get right into it.</description>
+    </item>
     
     <item>
       <title>Roguelike tutorial for Common Lisp - Part 5 - Placing enemies</title>
