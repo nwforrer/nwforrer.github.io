@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Roguelike tutorial for Common Lisp - Part 7 - Creating the interface - nick forrer</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta property="og:title" content="Roguelike tutorial for Common Lisp - Part 7 - Creating the interface" />
+<meta property="og:description" content="This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 7 of that tutorial.
+In this part, we will be working on the UI for the game. This will include a nicer looking health bar, displaying the game messages on screen rather than in the REPL, and showing entity information when hovering over a tile with your mouse cursor.
+The health bar First, lets work on showing a prettier health bar." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nwforrer.github.io/posts/roguelike-tutorial-part7/" />
+<meta property="article:published_time" content="2020-02-03T22:00:00-05:00" />
+<meta property="article:modified_time" content="2020-02-03T22:00:00-05:00" />
+<meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Roguelike tutorial for Common Lisp - Part 7 - Creating the interface"/>
+<meta name="twitter:description" content="This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 7 of that tutorial.
+In this part, we will be working on the UI for the game. This will include a nicer looking health bar, displaying the game messages on screen rather than in the REPL, and showing entity information when hovering over a tile with your mouse cursor.
+The health bar First, lets work on showing a prettier health bar."/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,300italic,400italic|Raleway:500,100,300" rel="stylesheet">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/normalize.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="https://nwforrer.github.io/css/main.css" /><script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script><script src="https://nwforrer.github.io/js/main.js"></script>
+</head>
+
+<body>
+	<div class="container wrapper post">
+		<div class="header">
+	<h1 class="site-title">nick forrer</h1>
+	<div class="site-description"><h2>Game development and Lisp related posts</h2><nav class="nav social">
+			<ul class="flat"><a href="https://github.com/nwforrer" title="Github"><i data-feather="github"></i></a><a href="/index.xml" title="RSS"><i data-feather="rss"></i></a></ul>
+		</nav>
+	</div>
+
+	<nav class="nav">
+		<ul class="flat">
+			
+			<li>
+				<a href="/">Home</a>
+			</li>
+			
+			<li>
+				<a href="/categories/roguelike-tutorial">Roguelike Tutorials</a>
+			</li>
+			
+		</ul>
+	</nav>
+</div>
+
+
+		<div class="post-header">
+			<h1 class="title">Roguelike tutorial for Common Lisp - Part 7 - Creating the interface</h1>
+			<div class="meta">Posted at &mdash; Feb 3, 2020</div>
+		</div>
+
+		<div class="markdown">
+			
+
+<p>This tutorial series is based on the <a href="http://rogueliketutorials.com">Python Roguelike Tutorial</a>. This will be
+covering <a href="http://rogueliketutorials.com/tutorials/tcod/part-7/">Part 7</a> of that tutorial.</p>
+
+<p>In this part, we will be working on the UI for the game. This will include
+a nicer looking health bar, displaying the game messages on screen rather than
+in the REPL, and showing entity information when hovering over a tile with your
+mouse cursor.</p>
+
+<h2 id="the-health-bar">The health bar</h2>
+
+<p>First, lets work on showing a prettier health bar. Right now we are just
+displaying text for the current health of the player. Instead, we will render a
+&ldquo;progress bar&rdquo; that will fill and deplete based on the player&rsquo;s health. Before
+we get into creating this bar, I&rsquo;d first like to create the concept of a
+&ldquo;panel&rdquo;. This will be a subsection of the screen where various UI elements can
+be grouped together, and rendered with a border to show the separation from the
+game map itself.</p>
+
+<p>First, update the map height to give some more space for the UI to be displayed:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defparameter</span> *map-height* <span style="color:#666">43</span>)</code></pre></div>
+<p>Next, create a new file &ldquo;ui.lisp&rdquo; to hold the panel implementation, along with
+the additional UI elements we&rsquo;ll be creating. Define the &ldquo;panel&rdquo; class, which
+will hold it&rsquo;s position on screen, it&rsquo;s width and height, along with a list of
+the components that should be rendered within. This will include the health bar
+once we create it, as well as the message log.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">in-package</span> <span style="color:#b8860b">:cl-rltut.ui</span>)
+
+(<span style="color:#a2f">defclass</span> <span style="color:#b8860b">panel</span> ()
+  ((<span style="color:#b8860b">x</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel/x</span>)
+   (<span style="color:#b8860b">y</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel/y</span>)
+   (<span style="color:#b8860b">width</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:width</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel/width</span>)
+   (<span style="color:#b8860b">height</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:height</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel/height</span>)
+   (<span style="color:#b8860b">components</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:components</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel/components</span> <span style="color:#b8860b">:initform</span> <span style="color:#800">nil</span>)))
+
+(<span style="color:#a2f">defmethod</span> <span style="color:#00a000">print-object</span> ((<span style="color:#b8860b">object</span> <span style="color:#b8860b">panel</span>) <span style="color:#00f">stream</span>)
+  (<span style="color:#a2f">print-unreadable-object</span> (<span style="color:#b8860b">object</span> <span style="color:#00f">stream</span> <span style="color:#b8860b">:type</span> <span style="color:#800">t</span>)
+    (<span style="color:#a2f">with-slots</span> (<span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>) <span style="color:#b8860b">object</span>
+      (<span style="color:#00a000">format</span> <span style="color:#00f">stream</span> <span style="color:#b44">&#34;(~A,~A) ~Ax~A&#34;</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>))))
+
+(<span style="color:#a2f">defun</span> <span style="color:#b8860b">make-panel</span> (<span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>)
+  (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;panel</span>
+                 <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:width</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">:height</span> <span style="color:#b8860b">height</span>))</code></pre></div>
+<p>We&rsquo;ll create a base class for UI components that will be rendered within a
+panel. It will hold a reference to it&rsquo;s parent panel, and it&rsquo;s position within
+the panel:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defclass</span> <span style="color:#b8860b">panel-component</span> ()
+  ((<span style="color:#b8860b">panel</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:panel</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel-component/panel</span>)
+   (<span style="color:#b8860b">x</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel-component/x</span>)
+   (<span style="color:#b8860b">y</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">panel-component/y</span>)))</code></pre></div>
+<p>Now we can create the &ldquo;bar&rdquo; class, which we will keep generic enough to be used
+for more than just health, such as mana or stamina. The bar will have a &ldquo;name&rdquo;,
+which will be the text rendered within the bar, the width of the bar, the
+current value and maximum value, and the colors to use while rendering. It will
+also include &ldquo;value-bind&rdquo; and &ldquo;max-bind&rdquo; slots. These will be functions that can
+be called to update the value and maximum values each frame. When a &ldquo;bar&rdquo; is
+created using the &ldquo;make-bar&rdquo; function, it will also add it to it&rsquo;s parent
+panel&rsquo;s list of components.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defclass</span> <span style="color:#b8860b">bar</span> (<span style="color:#b8860b">panel-component</span>)
+  ((<span style="color:#b8860b">name</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:name</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/name</span>)
+   (<span style="color:#b8860b">total-width</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:total-width</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/total-width</span>)
+   (<span style="color:#b8860b">value</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:value</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/value</span>)
+   (<span style="color:#b8860b">value-bind</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:value-bind</span>)
+   (<span style="color:#b8860b">maximum</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:maximum</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/maximum</span>)
+   (<span style="color:#b8860b">max-bind</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:max-bind</span>)
+   (<span style="color:#b8860b">color</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:color</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/color</span>)
+   (<span style="color:#b8860b">bg-color</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:bg-color</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">bar/bg-color</span>)))
+
+(<span style="color:#a2f">defmethod</span> <span style="color:#00a000">print-object</span> ((<span style="color:#b8860b">object</span> <span style="color:#b8860b">bar</span>) <span style="color:#00f">stream</span>)
+  (<span style="color:#a2f">print-unreadable-object</span> (<span style="color:#b8860b">object</span> <span style="color:#00f">stream</span> <span style="color:#b8860b">:type</span> <span style="color:#800">t</span>)
+    (<span style="color:#a2f">with-slots</span> (<span style="color:#b8860b">name</span> <span style="color:#b8860b">total-width</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">maximum</span>) <span style="color:#b8860b">object</span>
+      (<span style="color:#00a000">format</span> <span style="color:#00f">stream</span> <span style="color:#b44">&#34;~A ~Aw ~A/~A&#34;</span> <span style="color:#b8860b">name</span> <span style="color:#b8860b">total-width</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">maximum</span>))))
+
+(<span style="color:#a2f">defun</span> <span style="color:#b8860b">make-bar</span> (<span style="color:#b8860b">name</span> <span style="color:#b8860b">panel</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">total-width</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">color</span> <span style="color:#b8860b">bg-color</span> <span style="color:#a2f;font-weight:bold">&amp;key</span> (<span style="color:#b8860b">value-bind</span> <span style="color:#800">nil</span>) (<span style="color:#b8860b">max-bind</span> <span style="color:#800">nil</span>))
+  <span style="color:#b44">&#34;Create an instance of the `bar` class, and add it to it&#39;s parent panels list of components.&#34;</span>
+  (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">bar</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;bar</span> <span style="color:#b8860b">:name</span> <span style="color:#b8860b">name</span> <span style="color:#b8860b">:panel</span> <span style="color:#b8860b">panel</span>
+                                 <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:total-width</span> <span style="color:#b8860b">total-width</span>
+                                 <span style="color:#b8860b">:value</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">:maximum</span> <span style="color:#b8860b">value</span>
+                                 <span style="color:#b8860b">:value-bind</span> <span style="color:#b8860b">value-bind</span> <span style="color:#b8860b">:max-bind</span> <span style="color:#b8860b">max-bind</span>
+                                 <span style="color:#b8860b">:color</span> <span style="color:#b8860b">color</span> <span style="color:#b8860b">:bg-color</span> <span style="color:#b8860b">bg-color</span>)))
+    (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">panel/components</span> <span style="color:#b8860b">panel</span>) (<span style="color:#00a000">append</span> (<span style="color:#b8860b">panel/components</span> <span style="color:#b8860b">panel</span>) (<span style="color:#00f">list</span> <span style="color:#b8860b">bar</span>)))))</code></pre></div>
+<p>Now that we have the classes created, we can work on rendering the UI to the
+screen. All of the UI components will implement a &ldquo;render&rdquo; method that will
+handle rendering it within the panel. For the health bar, we&rsquo;ll render a box for
+the background that is the full width of the bar, followed by another bar
+over the top of the background whose width is calculated by the percentage of
+health the player has. We&rsquo;ll also render the text for the player&rsquo;s health within
+the bar.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defgeneric</span> <span style="color:#b8860b">render</span> (<span style="color:#b8860b">component</span>))
+
+(<span style="color:#a2f">defmethod</span> <span style="color:#b8860b">render</span> ((<span style="color:#b8860b">bar</span> <span style="color:#b8860b">bar</span>))
+  (<span style="color:#a2f">with-slots</span> (<span style="color:#b8860b">name</span> <span style="color:#b8860b">panel</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">total-width</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">value-bind</span> <span style="color:#b8860b">maximum</span> <span style="color:#b8860b">max-bind</span> <span style="color:#b8860b">color</span> <span style="color:#b8860b">bg-color</span>) <span style="color:#b8860b">bar</span>
+    (<span style="color:#a2f">when</span> <span style="color:#b8860b">value-bind</span>
+      (<span style="color:#a2f">setf</span> <span style="color:#b8860b">value</span> (<span style="color:#00a000">funcall</span> <span style="color:#b8860b">value-bind</span>)))
+    (<span style="color:#a2f">when</span> <span style="color:#b8860b">max-bind</span>
+      (<span style="color:#a2f">setf</span> <span style="color:#b8860b">maximum</span> (<span style="color:#00a000">funcall</span> <span style="color:#b8860b">max-bind</span>)))
+    (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">x-pos</span> (<span style="color:#00a000">+</span> (<span style="color:#b8860b">panel/x</span> <span style="color:#b8860b">panel</span>) <span style="color:#b8860b">x</span>))
+          (<span style="color:#b8860b">y-pos</span> (<span style="color:#00a000">+</span> (<span style="color:#b8860b">panel/y</span> <span style="color:#b8860b">panel</span>) <span style="color:#b8860b">y</span>))
+          (<span style="color:#b8860b">fill-width</span> (<span style="color:#00a000">round</span> (<span style="color:#00a000">*</span> (<span style="color:#00a000">/</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">maximum</span>) <span style="color:#b8860b">total-width</span>)))
+          (<span style="color:#b8860b">content</span> (<span style="color:#00a000">format</span> <span style="color:#800">nil</span> <span style="color:#b44">&#34;~A: ~A/~A&#34;</span> <span style="color:#b8860b">name</span> <span style="color:#b8860b">value</span> <span style="color:#b8860b">maximum</span>)))
+      (<span style="color:#b8860b">blt:draw-box</span> <span style="color:#b8860b">x-pos</span> <span style="color:#b8860b">y-pos</span> <span style="color:#b8860b">total-width</span> <span style="color:#666">1</span> <span style="color:#b8860b">:background-color</span> <span style="color:#b8860b">bg-color</span> <span style="color:#b8860b">:border</span> <span style="color:#800">nil</span>)
+      (<span style="color:#a2f">unless</span> (<span style="color:#00a000">zerop</span> <span style="color:#b8860b">value</span>)
+        (<span style="color:#a2f">setf</span> <span style="color:#b8860b">fill-width</span> (<span style="color:#00a000">max</span> <span style="color:#666">1</span> <span style="color:#b8860b">fill-width</span>))
+        (<span style="color:#b8860b">blt:draw-box</span> <span style="color:#b8860b">x-pos</span> <span style="color:#b8860b">y-pos</span> <span style="color:#b8860b">fill-width</span> <span style="color:#666">1</span> <span style="color:#b8860b">:background-color</span> <span style="color:#b8860b">color</span> <span style="color:#b8860b">:border</span> <span style="color:#800">nil</span>))
+      (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">255</span> <span style="color:#666">255</span> <span style="color:#666">255</span>))
+      (<span style="color:#b8860b">blt:draw-box</span> <span style="color:#b8860b">x-pos</span> (<span style="color:#00a000">1-</span> <span style="color:#b8860b">y-pos</span>) <span style="color:#b8860b">total-width</span> <span style="color:#666">2</span> <span style="color:#b8860b">:background-color</span> <span style="color:#800">nil</span> <span style="color:#b8860b">:border</span> <span style="color:#800">nil</span>
+                                                   <span style="color:#b8860b">:contents</span> <span style="color:#b8860b">content</span>))))</code></pre></div>
+<p>The render method for each component will be called by it&rsquo;s parent panel&rsquo;s
+&ldquo;render-panel&rdquo; method:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defmethod</span> <span style="color:#b8860b">render-panel</span> ((<span style="color:#b8860b">panel</span> <span style="color:#b8860b">panel</span>))
+  (<span style="color:#a2f">with-slots</span> (<span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span> <span style="color:#b8860b">components</span>) <span style="color:#b8860b">panel</span>
+      (<span style="color:#b8860b">blt:draw-box</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>)
+      (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">component</span> <span style="color:#b8860b">components</span>)
+        (<span style="color:#b8860b">render</span> <span style="color:#b8860b">component</span>))))</code></pre></div>
+<p>Back in the main function, we will actually create the panel that will hold
+these UI components, as well as the health bar. The &ldquo;value-bind&rdquo; and &ldquo;max-bind&rdquo;
+slots on the health bar will be assigned to the methods to retrieve the player&rsquo;s
+hp and max-hp slots. The stats instance will then be passed into the &ldquo;game-tick&rdquo; method.</p>
+
+<div class="highlight"><div style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">main</span> ()
+  (<span style="color:#b8860b">blt:with-terminal</span>
+    (<span style="color:#b8860b">config</span>)
+    (<span style="color:#a2f;font-weight:bold">let*</span> ((<span style="color:#b8860b">fighter-component</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;fighter</span>
+                                             <span style="color:#b8860b">:hp</span> <span style="color:#666">30</span>
+                                             <span style="color:#b8860b">:defense</span> <span style="color:#666">2</span>
+                                             <span style="color:#b8860b">:power</span> <span style="color:#666">5</span>))
+           (<span style="color:#b8860b">player</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;entity</span>
+                                  <span style="color:#b8860b">:name</span> <span style="color:#b44">&#34;Player&#34;</span>
+                                  <span style="color:#b8860b">:x</span> (<span style="color:#00a000">/</span> *screen-width* <span style="color:#666">2</span>)
+                                  <span style="color:#b8860b">:y</span> (<span style="color:#00a000">/</span> *screen-height* <span style="color:#666">2</span>)
+                                  <span style="color:#b8860b">:char</span> <span style="color:#b44">#\@</span>
+                                  <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:white</span>)
+                                  <span style="color:#b8860b">:blocks</span> <span style="color:#800">t</span>
+                                  <span style="color:#b8860b">:render-order</span> <span style="color:#b8860b">:actor</span>
+                                  <span style="color:#b8860b">:fighter</span> <span style="color:#b8860b">fighter-component</span>))
+           (<span style="color:#b8860b">entities</span> (<span style="color:#00f">list</span> <span style="color:#b8860b">player</span>))
+<span style="display:block;width:100%;background-color:#dfdfdf">           (<span style="color:#00a000">map</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;game-map</span> <span style="color:#b8860b">:w</span> *map-width* <span style="color:#b8860b">:h</span> *map-height*))
+</span><span style="display:block;width:100%;background-color:#dfdfdf">           (<span style="color:#b8860b">stats-panel</span> (<span style="color:#b8860b">make-panel</span> <span style="color:#666">0</span> *map-height* *screen-width* (<span style="color:#00a000">-</span> *screen-height* *map-height*))))
+</span><span style="display:block;width:100%;background-color:#dfdfdf">      (<span style="color:#b8860b">make-bar</span> <span style="color:#b44">&#34;HP&#34;</span> <span style="color:#b8860b">stats-panel</span> <span style="color:#666">1</span> <span style="color:#666">1</span> <span style="color:#666">15</span>
+</span><span style="display:block;width:100%;background-color:#dfdfdf">                (<span style="color:#b8860b">fighter/hp</span> <span style="color:#b8860b">fighter-component</span>)
+</span><span style="display:block;width:100%;background-color:#dfdfdf">                (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">0</span> <span style="color:#666">128</span> <span style="color:#666">0</span>) (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">100</span> <span style="color:#666">100</span> <span style="color:#666">100</span>)
+</span><span style="display:block;width:100%;background-color:#dfdfdf">                <span style="color:#b8860b">:value-bind</span> <span style="color:#00a000">#&#39;</span>(<span style="color:#a2f">lambda</span> () (<span style="color:#b8860b">fighter/hp</span> <span style="color:#b8860b">fighter-component</span>))
+</span><span style="display:block;width:100%;background-color:#dfdfdf">                <span style="color:#b8860b">:max-bind</span> <span style="color:#00a000">#&#39;</span>(<span style="color:#a2f">lambda</span> () (<span style="color:#b8860b">fighter/max-hp</span> <span style="color:#b8860b">fighter-component</span>)))
+</span>      (<span style="color:#b8860b">make-map</span> <span style="color:#00a000">map</span> *max-rooms* *room-min-size* *room-max-size* *map-width* *map-height* <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> *max-enemies-per-room*)
+      (<span style="color:#b8860b">fov</span> <span style="color:#00a000">map</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>))
+
+<span style="display:block;width:100%;background-color:#dfdfdf">      (<span style="color:#a2f">do</span> ((*state* (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;game-state</span> <span style="color:#b8860b">:running</span> <span style="color:#800">t</span> <span style="color:#b8860b">:state</span> <span style="color:#b8860b">:player-turn</span>) (<span style="color:#b8860b">game-tick</span> <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span> *state* <span style="color:#b8860b">stats-panel</span>)))
+</span>          ((<span style="color:#00f">null</span> (<span style="color:#b8860b">game-state/running</span> *state*)))))))</code></pre></td></tr></table>
+</div>
+</div>
+
+<p>The &ldquo;game-tick&rdquo; function needs to be updated to include the stats panel as a
+parameter, and pass it into the &ldquo;render-all&rdquo; function:</p>
+
+<div class="highlight"><div style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span></span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="display:block;width:100%;background-color:#dfdfdf">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">game-tick</span> (<span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">stats-panel</span>)
+</span>  (<span style="color:#a2f;font-weight:bold">declare</span> (<span style="color:#a2f;font-weight:bold">type</span> <span style="color:#b8860b">game-state</span> <span style="color:#b8860b">game-state</span>))
+<span style="display:block;width:100%;background-color:#dfdfdf">  (<span style="color:#b8860b">render-all</span> <span style="color:#b8860b">entities</span> <span style="color:#b8860b">player</span> <span style="color:#00a000">map</span> <span style="color:#b8860b">stats-panel</span> *screen-width* *screen-height*)</span></code></pre></td></tr></table>
+</div>
+</div>
+
+<p>Finally, the &ldquo;render-all&rdquo; function will take the panel in as a parameter, and
+then call the &ldquo;render-panel&rdquo; method to render the panel and all it&rsquo;s
+components. The previous code to render the health can be removed:</p>
+
+<div class="highlight"><div style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span></span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="display:block;width:100%;background-color:#dfdfdf">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">render-all</span> (<span style="color:#b8860b">entities</span> <span style="color:#b8860b">player</span> <span style="color:#00a000">map</span> <span style="color:#b8860b">stats-panel</span> <span style="color:#b8860b">screen-width</span> <span style="color:#b8860b">screen-height</span>)
+</span><span style="display:block;width:100%;background-color:#dfdfdf">  (<span style="color:#a2f;font-weight:bold">declare</span> (<span style="color:#a2f;font-weight:bold">ignore</span> <span style="color:#b8860b">screen-width</span> <span style="color:#b8860b">screen-height</span> <span style="color:#b8860b">player</span>))
+</span>  (<span style="color:#b8860b">blt:clear</span>)
+  (<span style="color:#a2f">dotimes</span> (<span style="color:#b8860b">y</span> *map-height*)
+    (<span style="color:#a2f">dotimes</span> (<span style="color:#b8860b">x</span> *map-width*)
+      (<span style="color:#a2f;font-weight:bold">let*</span> ((<span style="color:#b8860b">tile</span> (<span style="color:#00a000">aref</span> (<span style="color:#b8860b">game-map/tiles</span> <span style="color:#00a000">map</span>) <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>))
+             (<span style="color:#b8860b">wall</span> (<span style="color:#b8860b">tile/block-sight</span> <span style="color:#b8860b">tile</span>))
+             (<span style="color:#b8860b">visible</span> (<span style="color:#b8860b">tile/visible</span> <span style="color:#b8860b">tile</span>))
+             (<span style="color:#b8860b">explored</span> (<span style="color:#b8860b">tile/explored</span> <span style="color:#b8860b">tile</span>)))
+        (<span style="color:#a2f">cond</span> (<span style="color:#b8860b">visible</span>
+               (<span style="color:#a2f;font-weight:bold">if</span> <span style="color:#b8860b">wall</span>
+                   (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:background-color</span>) (<span style="color:#00a000">getf</span> *color-map* <span style="color:#b8860b">:light-wall</span>))
+                   (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:background-color</span>) (<span style="color:#00a000">getf</span> *color-map* <span style="color:#b8860b">:light-ground</span>)))
+               (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:cell-char</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>) <span style="color:#b44">#\Space</span>))
+              (<span style="color:#b8860b">explored</span>
+               (<span style="color:#a2f;font-weight:bold">if</span> <span style="color:#b8860b">wall</span>
+                   (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:background-color</span>) (<span style="color:#00a000">getf</span> *color-map* <span style="color:#b8860b">:dark-wall</span>))
+                   (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:background-color</span>) (<span style="color:#00a000">getf</span> *color-map* <span style="color:#b8860b">:dark-ground</span>)))
+               (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:cell-char</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>) <span style="color:#b44">#\Space</span>))))))
+  (<span style="color:#00a000">mapc</span> <span style="color:#00a000">#&#39;</span>(<span style="color:#a2f">lambda</span> (<span style="color:#b8860b">entity</span>) (<span style="color:#b8860b">draw</span> <span style="color:#b8860b">entity</span> (<span style="color:#b8860b">game-map/tiles</span> <span style="color:#00a000">map</span>)))
+        (<span style="color:#00a000">sort</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">#&#39;</span><span style="color:#b8860b">render-order-compare</span>))
+  (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:background-color</span>) (<span style="color:#b8860b">blt:black</span>)
+        (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:white</span>))
+<span style="display:block;width:100%;background-color:#dfdfdf">  (<span style="color:#b8860b">render-panel</span> <span style="color:#b8860b">stats-panel</span>)
+</span>
+  (<span style="color:#b8860b">blt:refresh</span>))</code></pre></td></tr></table>
+</div>
+</div>
+
+<p>Now, if you run the game, you should see a health bar rendered towards the
+bottom of the screen, and it should update when the player gets damaged:
+<img src="/cl-rltut/health-bar.png" alt="" /></p>
+
+<h2 id="the-message-log">The message log</h2>
+
+<p>Now we&rsquo;ll work on displaying the message log on the screen, rather than just in
+the REPL. We&rsquo;ll begin by defining the &ldquo;message-log&rdquo; class which will hold a list
+of messages along with it&rsquo;s width and height. The &ldquo;message&rdquo; class will hold the
+message text, as well as the message color, so that different messages can be
+displayed with different colors.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defclass</span> <span style="color:#b8860b">message-log</span> (<span style="color:#b8860b">panel-component</span>)
+  ((<span style="color:#b8860b">messages</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:messages</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">message-log/messages</span> <span style="color:#b8860b">:initform</span> <span style="color:#800">nil</span>)
+   (<span style="color:#b8860b">width</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:width</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">message-log/width</span>)
+   (<span style="color:#b8860b">height</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:height</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">message-log/height</span>)))
+
+(<span style="color:#a2f">defclass</span> <span style="color:#b8860b">message</span> ()
+  ((<span style="color:#b8860b">text</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:text</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">message/text</span>)
+   (<span style="color:#b8860b">color</span> <span style="color:#b8860b">:initarg</span> <span style="color:#b8860b">:color</span> <span style="color:#b8860b">:accessor</span> <span style="color:#b8860b">message/color</span>)))
+
+(<span style="color:#a2f">defun</span> <span style="color:#b8860b">make-message-log</span> (<span style="color:#b8860b">panel</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>)
+  (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#00a000">log</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;message-log</span> <span style="color:#b8860b">:panel</span> <span style="color:#b8860b">panel</span> <span style="color:#b8860b">:x</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">:y</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">:width</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">:height</span> <span style="color:#b8860b">height</span>)))
+    (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">panel/components</span> <span style="color:#b8860b">panel</span>) (<span style="color:#00a000">append</span> (<span style="color:#b8860b">panel/components</span> <span style="color:#b8860b">panel</span>) (<span style="color:#00f">list</span> <span style="color:#00a000">log</span>)))
+    <span style="color:#00a000">log</span>))</code></pre></div>
+<p>We will also want a method to add a message to the message log. This will add a
+message to the message-log &ldquo;messages&rdquo; list, and will also take care of removing
+old messages when the messages will overflow the height of the message log.
+We&rsquo;ll also handle &ldquo;word-wrapping&rdquo; when messages are adding that exceed the width
+of the message log.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">word-wrap</span> (<span style="color:#b8860b">full-line</span> <span style="color:#b8860b">width</span>)
+  (<span style="color:#a2f">do</span> ((<span style="color:#b8860b">lines</span> <span style="color:#800">nil</span>)
+       (<span style="color:#b8860b">line</span> <span style="color:#b8860b">full-line</span>))
+      ((<span style="color:#00a000">zerop</span> (<span style="color:#00a000">length</span> <span style="color:#b8860b">line</span>)) <span style="color:#b8860b">lines</span>)
+    (<span style="color:#a2f">cond</span> ((<span style="color:#00a000">&lt;</span> (<span style="color:#00a000">length</span> <span style="color:#b8860b">line</span>) <span style="color:#b8860b">width</span>)
+           (<span style="color:#a2f">setf</span> <span style="color:#b8860b">lines</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">lines</span> (<span style="color:#00f">list</span> <span style="color:#b8860b">line</span>))
+                 <span style="color:#b8860b">line</span> <span style="color:#800">nil</span>))
+           (<span style="color:#800">t</span>
+            (<span style="color:#a2f">setf</span> <span style="color:#b8860b">lines</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">lines</span> (<span style="color:#00f">list</span> (<span style="color:#00a000">subseq</span> <span style="color:#b8860b">line</span> <span style="color:#666">0</span> <span style="color:#b8860b">width</span>)))
+                  <span style="color:#b8860b">line</span> (<span style="color:#00a000">subseq</span> <span style="color:#b8860b">line</span> <span style="color:#b8860b">width</span>))))))
+
+(<span style="color:#a2f">defgeneric</span> <span style="color:#b8860b">add-message</span> (<span style="color:#00a000">log</span> <span style="color:#b8860b">message</span> <span style="color:#a2f;font-weight:bold">&amp;key</span> <span style="color:#b8860b">color</span>))
+(<span style="color:#a2f">defmethod</span> <span style="color:#b8860b">add-message</span> ((<span style="color:#00a000">log</span> <span style="color:#b8860b">message-log</span>) <span style="color:#b8860b">message</span> <span style="color:#a2f;font-weight:bold">&amp;key</span> (<span style="color:#b8860b">color</span> (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">255</span> <span style="color:#666">255</span> <span style="color:#666">255</span>)))
+  (<span style="color:#a2f">with-slots</span> (<span style="color:#b8860b">messages</span> <span style="color:#b8860b">width</span> <span style="color:#b8860b">height</span>) <span style="color:#00a000">log</span>
+    (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">wrapped-text</span> (<span style="color:#b8860b">word-wrap</span> <span style="color:#b8860b">message</span> <span style="color:#b8860b">width</span>)))
+      (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">text</span> <span style="color:#b8860b">wrapped-text</span>)
+        (<span style="color:#a2f">setf</span> <span style="color:#b8860b">messages</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">messages</span> (<span style="color:#00f">list</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;message</span> <span style="color:#b8860b">:text</span> <span style="color:#b8860b">text</span> <span style="color:#b8860b">:color</span> <span style="color:#b8860b">color</span>))))
+        (<span style="color:#a2f">when</span> (<span style="color:#00a000">&gt;=</span> (<span style="color:#00a000">length</span> <span style="color:#b8860b">messages</span>) (<span style="color:#00a000">1-</span> <span style="color:#b8860b">height</span>))
+          (<span style="color:#a2f">setf</span> <span style="color:#b8860b">messages</span> (<span style="color:#00a000">rest</span> <span style="color:#b8860b">messages</span>)))))))</code></pre></div>
+<p>Now, to implement the &ldquo;render&rdquo; method for the message log, we&rsquo;ll just loop over
+all of the messages, and render them line-by-line:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defmethod</span> <span style="color:#b8860b">render</span> ((<span style="color:#00a000">log</span> <span style="color:#b8860b">message-log</span>))
+  (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">x</span> (<span style="color:#00a000">+</span> (<span style="color:#b8860b">panel-component/x</span> <span style="color:#00a000">log</span>) (<span style="color:#b8860b">panel/x</span> (<span style="color:#b8860b">panel-component/panel</span> <span style="color:#00a000">log</span>))))
+        (<span style="color:#b8860b">y</span> (<span style="color:#00a000">+</span> (<span style="color:#b8860b">panel-component/y</span> <span style="color:#00a000">log</span>) (<span style="color:#b8860b">panel/y</span> (<span style="color:#b8860b">panel-component/panel</span> <span style="color:#00a000">log</span>)))))
+    (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">message</span> (<span style="color:#b8860b">message-log/messages</span> <span style="color:#00a000">log</span>))
+      (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">message/color</span> <span style="color:#b8860b">message</span>))
+      (<span style="color:#b8860b">blt:print</span> <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> (<span style="color:#b8860b">message/text</span> <span style="color:#b8860b">message</span>))
+      (<span style="color:#a2f">incf</span> <span style="color:#b8860b">y</span>))))</code></pre></div>
+<p>Now, back in the main function, we can create the message log, and add an
+initial message.</p>
+
+<div class="highlight"><div style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 4
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 5
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 6
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 7
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 8
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f"> 9
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">10
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">11
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">12
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">13
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">14
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">15
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">16
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">17
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">18
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">19
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">20
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">21
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">22
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">23
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">24
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">25
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">26
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">27
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">28
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">29
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">30
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">31
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">32
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">main</span> ()
+  (<span style="color:#b8860b">blt:with-terminal</span>
+    (<span style="color:#b8860b">config</span>)
+    (<span style="color:#a2f;font-weight:bold">let*</span> ((<span style="color:#b8860b">fighter-component</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;fighter</span>
+                                             <span style="color:#b8860b">:hp</span> <span style="color:#666">30</span>
+                                             <span style="color:#b8860b">:defense</span> <span style="color:#666">2</span>
+                                             <span style="color:#b8860b">:power</span> <span style="color:#666">5</span>))
+           (<span style="color:#b8860b">player</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;entity</span>
+                                  <span style="color:#b8860b">:name</span> <span style="color:#b44">&#34;Player&#34;</span>
+                                  <span style="color:#b8860b">:x</span> (<span style="color:#00a000">/</span> *screen-width* <span style="color:#666">2</span>)
+                                  <span style="color:#b8860b">:y</span> (<span style="color:#00a000">/</span> *screen-height* <span style="color:#666">2</span>)
+                                  <span style="color:#b8860b">:char</span> <span style="color:#b44">#\@</span>
+                                  <span style="color:#b8860b">:color</span> (<span style="color:#b8860b">blt:white</span>)
+                                  <span style="color:#b8860b">:blocks</span> <span style="color:#800">t</span>
+                                  <span style="color:#b8860b">:render-order</span> <span style="color:#b8860b">:actor</span>
+                                  <span style="color:#b8860b">:fighter</span> <span style="color:#b8860b">fighter-component</span>))
+           (<span style="color:#b8860b">entities</span> (<span style="color:#00f">list</span> <span style="color:#b8860b">player</span>))
+           (<span style="color:#00a000">map</span> (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;game-map</span> <span style="color:#b8860b">:w</span> *map-width* <span style="color:#b8860b">:h</span> *map-height*))
+           (<span style="color:#b8860b">stats-panel</span> (<span style="color:#b8860b">make-panel</span> <span style="color:#666">0</span> *map-height* *screen-width* (<span style="color:#00a000">-</span> *screen-height* *map-height*)))
+<span style="display:block;width:100%;background-color:#dfdfdf">           (<span style="color:#b8860b">message-log</span> (<span style="color:#b8860b">make-message-log</span> <span style="color:#b8860b">stats-panel</span> <span style="color:#666">20</span> <span style="color:#666">2</span> (<span style="color:#00a000">-</span> *screen-width* <span style="color:#666">20</span>) (<span style="color:#00a000">-</span> *screen-height* *map-height* <span style="color:#666">1</span>))))
+</span>      (<span style="color:#b8860b">make-bar</span> <span style="color:#b44">&#34;HP&#34;</span> <span style="color:#b8860b">stats-panel</span> <span style="color:#666">1</span> <span style="color:#666">2</span> <span style="color:#666">15</span>
+                (<span style="color:#b8860b">fighter/hp</span> <span style="color:#b8860b">fighter-component</span>)
+                (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">0</span> <span style="color:#666">128</span> <span style="color:#666">0</span>) (<span style="color:#b8860b">blt:rgba</span> <span style="color:#666">100</span> <span style="color:#666">100</span> <span style="color:#666">100</span>)
+                <span style="color:#b8860b">:value-bind</span> <span style="color:#00a000">#&#39;</span>(<span style="color:#a2f">lambda</span> () (<span style="color:#b8860b">fighter/hp</span> <span style="color:#b8860b">fighter-component</span>))
+                <span style="color:#b8860b">:max-bind</span> <span style="color:#00a000">#&#39;</span>(<span style="color:#a2f">lambda</span> () (<span style="color:#b8860b">fighter/max-hp</span> <span style="color:#b8860b">fighter-component</span>)))
+      (<span style="color:#b8860b">make-map</span> <span style="color:#00a000">map</span> *max-rooms* *room-min-size* *room-max-size* *map-width* *map-height* <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> *max-enemies-per-room*)
+      (<span style="color:#b8860b">fov</span> <span style="color:#00a000">map</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">player</span>) (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">player</span>))
+
+<span style="display:block;width:100%;background-color:#dfdfdf">      (<span style="color:#b8860b">add-message</span> <span style="color:#b8860b">message-log</span> <span style="color:#b44">&#34;Welcome to the dungeon!&#34;</span>)
+</span>
+      (<span style="color:#a2f">do</span> ((*state* (<span style="color:#00a000">make-instance</span> <span style="color:#b8860b">&#39;game-state</span> <span style="color:#b8860b">:running</span> <span style="color:#800">t</span> <span style="color:#b8860b">:state</span> <span style="color:#b8860b">:player-turn</span>) (<span style="color:#b8860b">game-tick</span> <span style="color:#b8860b">player</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span> *state* <span style="color:#b8860b">stats-panel</span>)))
+          ((<span style="color:#00f">null</span> (<span style="color:#b8860b">game-state/running</span> *state*)))))))</code></pre></td></tr></table>
+</div>
+</div>
+
+<p>If you run the game now, you should see that initial message displayed on
+screen:
+<img src="/cl-rltut/initial-message-log.png" alt="" /></p>
+
+<p>To have the remaining messages displayed in the log, replace the &ldquo;format&rdquo;
+function calls with &ldquo;add-message&rdquo; calls in the game-tick function. Once done,
+you will see the message log fill up with messages:
+<img src="/cl-rltut/message-log.png" alt="" /></p>
+
+<h2 id="entities-under-cursor">Entities under cursor</h2>
+
+<p>The final change we&rsquo;ll make is to incorporate mouse movement into the UI. When
+the mouse cursor is over a tile, we&rsquo;ll display the list of all entity names to
+the player. This will make it easier for player&rsquo;s to learn which entities are
+which once there are more than two in the game.</p>
+
+<p>The first change is to configure BearLibTerminal to track mouse movement events:</p>
+
+<div class="highlight"><div style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4">
+<table style="border-spacing:0;padding:0;margin:0;border:0;width:auto;overflow:auto;display:block;"><tr><td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">1
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">2
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">3
+</span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">4
+</span><span style="display:block;width:100%;background-color:#dfdfdf"><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">5
+</span></span><span style="margin-right:0.4em;padding:0 0.4em 0 0.4em;color:#7f7f7f">6
+</span></code></pre></td>
+<td style="vertical-align:top;padding:0;margin:0;border:0;">
+<pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">config</span> ()
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.resizeable = true&#34;</span>)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.size = ~Ax~A&#34;</span> *screen-width* *screen-height*)
+  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;output.vsync = true&#34;</span>)
+<span style="display:block;width:100%;background-color:#dfdfdf">  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;input.filter = keyboard, mouse&#34;</span>)
+</span>  (<span style="color:#b8860b">blt:set</span> <span style="color:#b44">&#34;window.title = Roguelike&#34;</span>))</code></pre></td></tr></table>
+</div>
+</div>
+
+<p>Now, in &ldquo;rendering.lisp&rdquo; we&rsquo;ll need a function to retrieve a list of all entity
+names under the mouse cursor. This will first check to make sure the tile is
+visible by the player. Then, it&rsquo;ll loop over the list of entities, and for any
+entities at the mouse cursor position, it will append the entity name to the
+&ldquo;names&rdquo; list. Then, to join all of the names to a string separated by a comma,
+we&rsquo;ll use the &ldquo;format&rdquo; method, with the &ldquo;{}&rdquo; descriptor to iterate over the
+names, and the &ldquo;^&rdquo; descriptor to only include the comma when it&rsquo;s not the last
+name in the list.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">get-names-under-mouse</span> (<span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span>)
+  (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">names</span> <span style="color:#800">nil</span>)
+        (<span style="color:#b8860b">in-fov</span> (<span style="color:#b8860b">tile/visible</span> (<span style="color:#00a000">aref</span> (<span style="color:#b8860b">game-map/tiles</span> <span style="color:#00a000">map</span>) <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>))))
+    (<span style="color:#a2f">when</span> <span style="color:#b8860b">in-fov</span>
+      (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
+        (<span style="color:#a2f">when</span> (<span style="color:#a2f">and</span> (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">x</span>)
+                   (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">y</span>))
+          (<span style="color:#a2f">setf</span> <span style="color:#b8860b">names</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">names</span> (<span style="color:#00f">list</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">entity</span>)))))))
+    (<span style="color:#00a000">format</span> <span style="color:#800">nil</span> <span style="color:#b44">&#34;~{~A~^, ~}&#34;</span> <span style="color:#b8860b">names</span>)))</code></pre></div>
+<p>Finally, update the &ldquo;render-all&rdquo; function to call this method, and render the
+names to the screen.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:yellow</span>))
+(<span style="color:#b8860b">blt:print</span> (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/x</span> <span style="color:#b8860b">stats-panel</span>)) (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/y</span> <span style="color:#b8860b">stats-panel</span>)) (<span style="color:#b8860b">get-names-under-mouse</span> (<span style="color:#b8860b">blt:mouse-x</span>) (<span style="color:#b8860b">blt:mouse-y</span>) <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span>))</code></pre></div>
+<p>Now when you run the game and hover your mouse over an entity, it will display
+their names to the screen:
+<img src="/cl-rltut/entities-under-cursor.png" alt="" /></p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>These were some changes to improve the user experience by making the UI nicer to
+look at, and more informative.</p>
+
+<p>You can find the current state of the code on <a href="https://github.com/nwforrer/cl-rltut/tree/part-6">Github</a>. The list of changes since
+the previous tutorial can be found at
+<a href="https://github.com/nwforrer/cl-rltut/compare/part-6...part-7">https://github.com/nwforrer/cl-rltut/compare/part-6...part-7</a>.</p>
+
+<p>If you run into any issues, or have questions/feedback, please open an issue on this
+blogs <a href="https://github.com/nwforrer/blog/issues">GitHub repository</a>.</p>
+
+		</div><div id="disqus_thread"></div>
+<script type="text/javascript">
+	(function () {
+		
+		
+		if (window.location.hostname == "localhost")
+			return;
+
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		var disqus_shortname = '';
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by
+		Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+	<div class="footer wrapper">
+	<nav class="nav">
+		<div><a href="https://github.com/vividvilla/ezhil">Ezhil theme</a> | Built with <a href="https://gohugo.io">Hugo</a></div>
+	</nav>
+</div>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-148797548-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script>feather.replace()</script>
+</body>
+</html>

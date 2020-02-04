@@ -6,10 +6,21 @@
     <description>Recent content in roguelike on nick forrer</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 16 Oct 2019 06:55:00 -0400</lastBuildDate>
+    <lastBuildDate>Mon, 03 Feb 2020 22:00:00 -0500</lastBuildDate>
     
 	<atom:link href="https://nwforrer.github.io/tags/roguelike/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Roguelike tutorial for Common Lisp - Part 7 - Creating the interface</title>
+      <link>https://nwforrer.github.io/posts/roguelike-tutorial-part7/</link>
+      <pubDate>Mon, 03 Feb 2020 22:00:00 -0500</pubDate>
+      
+      <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part7/</guid>
+      <description>This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 7 of that tutorial.
+In this part, we will be working on the UI for the game. This will include a nicer looking health bar, displaying the game messages on screen rather than in the REPL, and showing entity information when hovering over a tile with your mouse cursor.
+The health bar First, lets work on showing a prettier health bar.</description>
+    </item>
     
     <item>
       <title>Roguelike tutorial for Common Lisp - Part 6 - Combat</title>
