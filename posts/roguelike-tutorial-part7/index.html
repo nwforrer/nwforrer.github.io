@@ -494,18 +494,22 @@ we&rsquo;ll use the &ldquo;format&rdquo; method, with the &ldquo;{}&rdquo; descr
 names, and the &ldquo;^&rdquo; descriptor to only include the comma when it&rsquo;s not the last
 name in the list.</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">defun</span> <span style="color:#b8860b">get-names-under-mouse</span> (<span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span> <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span>)
-  (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">names</span> <span style="color:#800">nil</span>)
-        (<span style="color:#b8860b">in-fov</span> (<span style="color:#b8860b">tile/visible</span> (<span style="color:#00a000">aref</span> (<span style="color:#b8860b">game-map/tiles</span> <span style="color:#00a000">map</span>) <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>))))
-    (<span style="color:#a2f">when</span> <span style="color:#b8860b">in-fov</span>
-      (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
-        (<span style="color:#a2f">when</span> (<span style="color:#a2f">and</span> (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">x</span>)
-                   (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">y</span>))
-          (<span style="color:#a2f">setf</span> <span style="color:#b8860b">names</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">names</span> (<span style="color:#00f">list</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">entity</span>)))))))
-    (<span style="color:#00a000">format</span> <span style="color:#800">nil</span> <span style="color:#b44">&#34;~{~A~^, ~}&#34;</span> <span style="color:#b8860b">names</span>)))</code></pre></div>
+  (<span style="color:#a2f">when</span> (<span style="color:#a2f">and</span> (<span style="color:#00a000">&lt;</span> <span style="color:#b8860b">y</span> (<span style="color:#b8860b">game-map/h</span> <span style="color:#00a000">map</span>))
+             (<span style="color:#00a000">&lt;</span> <span style="color:#b8860b">x</span> (<span style="color:#b8860b">game-map/w</span> <span style="color:#00a000">map</span>)))
+    (<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">names</span> <span style="color:#800">nil</span>)
+          (<span style="color:#b8860b">in-fov</span> (<span style="color:#b8860b">tile/visible</span> (<span style="color:#00a000">aref</span> (<span style="color:#b8860b">game-map/tiles</span> <span style="color:#00a000">map</span>) <span style="color:#b8860b">x</span> <span style="color:#b8860b">y</span>))))
+      (<span style="color:#a2f">when</span> <span style="color:#b8860b">in-fov</span>
+        (<span style="color:#a2f">dolist</span> (<span style="color:#b8860b">entity</span> <span style="color:#b8860b">entities</span>)
+          (<span style="color:#a2f">when</span> (<span style="color:#a2f">and</span> (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/x</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">x</span>)
+                     (<span style="color:#00a000">=</span> (<span style="color:#b8860b">entity/y</span> <span style="color:#b8860b">entity</span>) <span style="color:#b8860b">y</span>))
+            (<span style="color:#a2f">setf</span> <span style="color:#b8860b">names</span> (<span style="color:#00a000">append</span> <span style="color:#b8860b">names</span> (<span style="color:#00f">list</span> (<span style="color:#b8860b">entity/name</span> <span style="color:#b8860b">entity</span>)))))))
+      (<span style="color:#00a000">format</span> <span style="color:#800">nil</span> <span style="color:#b44">&#34;~{~A~^, ~}&#34;</span> <span style="color:#b8860b">names</span>))))</code></pre></div>
 <p>Finally, update the &ldquo;render-all&rdquo; function to call this method, and render the
 names to the screen.</p>
-<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:yellow</span>))
-(<span style="color:#b8860b">blt:print</span> (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/x</span> <span style="color:#b8860b">stats-panel</span>)) (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/y</span> <span style="color:#b8860b">stats-panel</span>)) (<span style="color:#b8860b">get-names-under-mouse</span> (<span style="color:#b8860b">blt:mouse-x</span>) (<span style="color:#b8860b">blt:mouse-y</span>) <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span>))</code></pre></div>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-lisp" data-lang="lisp">(<span style="color:#a2f;font-weight:bold">let</span> ((<span style="color:#b8860b">entity-names</span> (<span style="color:#b8860b">get-names-under-mouse</span> (<span style="color:#b8860b">blt:mouse-x</span>) (<span style="color:#b8860b">blt:mouse-y</span>) <span style="color:#b8860b">entities</span> <span style="color:#00a000">map</span>)))
+(<span style="color:#a2f">when</span> <span style="color:#b8860b">entity-names</span>
+    (<span style="color:#a2f">setf</span> (<span style="color:#b8860b">blt:color</span>) (<span style="color:#b8860b">blt:yellow</span>))
+    (<span style="color:#b8860b">blt:print</span> (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/x</span> <span style="color:#b8860b">stats-panel</span>)) (<span style="color:#00a000">1+</span> (<span style="color:#b8860b">panel/y</span> <span style="color:#b8860b">stats-panel</span>)) <span style="color:#b8860b">entity-names</span>)))</code></pre></div>
 <p>Now when you run the game and hover your mouse over an entity, it will display
 their names to the screen:
 <img src="/cl-rltut/entities-under-cursor.png" alt="" /></p>
