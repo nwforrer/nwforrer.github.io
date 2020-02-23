@@ -6,10 +6,21 @@
     <description>Recent content in Posts on nick forrer</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 03 Feb 2020 22:00:00 -0500</lastBuildDate>
+    <lastBuildDate>Sun, 23 Feb 2020 12:00:00 -0500</lastBuildDate>
     
 	<atom:link href="https://nwforrer.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Roguelike tutorial for Common Lisp - Part 8 - Items and inventory</title>
+      <link>https://nwforrer.github.io/posts/roguelike-tutorial-part8/</link>
+      <pubDate>Sun, 23 Feb 2020 12:00:00 -0500</pubDate>
+      
+      <guid>https://nwforrer.github.io/posts/roguelike-tutorial-part8/</guid>
+      <description>This tutorial series is based on the Python Roguelike Tutorial. This will be covering Part 8 of that tutorial.
+In this part, we will add items to the game, as well as an inventory system to interact with the items. For now, we will only be adding one item, a healing potion, but we will be adding more items in the future.
+Placing items To start, we will update the map generation code to start placing healing potions.</description>
+    </item>
     
     <item>
       <title>Roguelike tutorial for Common Lisp - Part 7 - Creating the interface</title>
