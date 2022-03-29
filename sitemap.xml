@@ -1,105 +1,65 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
   <url>
     <loc>https://nwforrer.github.io/categories/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/tags/gamedev/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/tags/lisp/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/tags/roguelike/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part8/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/categories/roguelike-tutorial/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/tags/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/tags/tutorial/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/categories/tutorials/</loc>
     <lastmod>2020-02-23T12:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part7/</loc>
     <lastmod>2020-02-03T22:00:00-05:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part6/</loc>
     <lastmod>2019-10-16T06:55:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part5/</loc>
     <lastmod>2019-07-15T23:19:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part4/</loc>
     <lastmod>2019-07-14T22:43:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part3/</loc>
     <lastmod>2019-07-05T17:05:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part2/</loc>
     <lastmod>2019-06-27T21:53:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part1/</loc>
     <lastmod>2019-06-25T20:10:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/roguelike-tutorial-part0/</loc>
     <lastmod>2019-06-23T10:24:00-04:00</lastmod>
-  </url>
-  
-  <url>
+  </url><url>
     <loc>https://nwforrer.github.io/posts/hello-world/</loc>
-    <lastmod>2019-06-23T00:00:00-04:00</lastmod>
+    <lastmod>2019-06-23T00:00:00+00:00</lastmod>
   </url>
-  
 </urlset>
